@@ -1,6 +1,7 @@
 import { RouteRecordRaw } from 'vue-router';
 import DemoRoute from 'src/app-main/demo-examples/route-config'
 import PlayBookRoute from "src/app-main/playbook/route-config"
+import PostStaticRoute from "src/app-main/post-static/route-config"
 import Index from 'src/app-main/index.vue'
 
 
@@ -20,6 +21,9 @@ const routes: RouteRecordRaw[] = [
   },
   {
     ...PlayBookRoute
+  },
+  {
+    ...PostStaticRoute
   },
   {
     path: '/:catchAll(.*)*',
