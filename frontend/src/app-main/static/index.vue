@@ -1,16 +1,19 @@
 <template>
   <div class="post-static-editor">
     <toolbar
-      :can-undo="false"
-      :can-redo="false"
       @add-text="addTextNode"
       @add-image="addImageNode"
-      @change-canvas-size="changeCanvasSize"
       @export="exportCanvas"
     />
 
-    <div class="editor-content">
-      <div class="canvas-wrapper">
+    <div class="main-area">
+      <top-bar
+        :current-size="canvasState.canvasSize"
+        @change-canvas-size="changeCanvasSize"
+      />
+
+      <div class="editor-content">
+        <div class="canvas-wrapper">
         <canvas-grid
           :canvas-size="canvasState.canvasSize"
           :grid-size="canvasState.gridSize"
@@ -54,24 +57,24 @@
         @delete-node="deleteNode"
         @close="canvasState.selectedNodeId = null"
       />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { toPng } from 'html-to-image';
-import Toolbar from './toolbar.vue';
+
+import TopBar from './top-bar.vue';
 import CanvasGrid from './canvas-grid.vue';
 import AlignmentGuides from './alignment-guides.vue';
 import TextNode from './text-node.vue';
 import ImageNode from './image-node.vue';
 import PropertiesPanel from './properties-panel.vue';
 import { useGridSnap } from './composables/use-grid-snap';
-import {
-  CanvasState,
-  GraphicNode,
-  TextNode as TextNodeType,
+import { ref, computed } from 'vue';
+import { toPng } from 'html-to-image';
+import Toolbar from './toolbar.vue';
+import  { TextNode as TextNodeType,
   ImageNode as ImageNodeType,
   NodeType,
   Position,
@@ -84,13 +87,13 @@ const canvasState = ref<CanvasState>({
   nodes: [],
   selectedNodeId: null,
   canvasSize: { width: 1080, height: 1080 },
-  gridSize: 4,
+  gridSize: 16,
   showGrid: true
 });
 
 // Grid configuration
 const gridConfig = ref({
-  size: 4,
+  size: 16,
   snapThreshold: 8,
   showGuides: true
 });
@@ -252,15 +255,23 @@ const exportCanvas = async () => {
 <style scoped>
 .post-static-editor {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100vh;
   background-color: #f5f5f5;
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .editor-content {
   display: flex;
   flex: 1;
   overflow: hidden;
+  flex-direction: row;
 }
 
 .canvas-wrapper {

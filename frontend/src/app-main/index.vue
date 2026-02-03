@@ -20,19 +20,27 @@ const selectedRoute = ref(routeList[1])
           Routes could be [<i>zerometry</i>, <i>zerometry.todo-list</i>]
         </div>
         <q-list bordered separator round>
-          <a-nav-item v-for="aRoute in routeList"
-                  :key="aRoute.name"
-                  @click="selectedRoute = aRoute"
-          >
-            <q-item-section >
-              <q-item-label :class="{'text-indigo': aRoute.name === selectedRoute.name}">
-                {{aRoute.name}}
-              </q-item-label>
-              <q-item-label  caption v-if="aRoute.children && aRoute.children.length">
-                {{aRoute.children?.length}} routes
+          <template v-for="aRoute in routeList" :key="aRoute.name">
+
+            <a-nav-item v-if="aRoute.children && aRoute.children.length" @click="selectedRoute = aRoute" >
+              <q-item-section >
+                <q-item-label :class="{'text-indigo': aRoute.name === selectedRoute.name}">
+                  {{aRoute.name}}
+                </q-item-label>
+                <q-item-label  caption v-if="aRoute.children && aRoute.children.length">
+                  {{aRoute.children?.length}} routes
               </q-item-label>
             </q-item-section>
-          </a-nav-item>
+            </a-nav-item>
+            <a-nav-item v-else :route-name="aRoute.name">
+              <q-item-section >
+                <q-item-label :class="{'text-indigo': aRoute.name === selectedRoute.name}">
+                  {{aRoute.name}}
+                </q-item-label>
+            </q-item-section>
+            </a-nav-item>
+          </template>
+
         </q-list>
       </div>
       <div class="col-md-4">

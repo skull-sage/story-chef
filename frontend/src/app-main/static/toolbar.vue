@@ -3,126 +3,108 @@
     <div class="toolbar-section">
       <q-btn
         flat
+        round
         icon="text_fields"
-        label="Add Text"
         color="primary"
+        class="toolbar-btn"
         @click="$emit('add-text')"
-      />
+      >
+        <q-tooltip anchor="center right" self="center left">Add Text</q-tooltip>
+        <q-badge
+          color="accent"
+          floating
+          rounded
+          class="add-badge"
+        >
+          <q-icon name="add" size="8px" />
+        </q-badge>
+      </q-btn>
       <q-btn
         flat
+        round
         icon="image"
-        label="Add Image"
         color="primary"
+        class="toolbar-btn"
         @click="$emit('add-image')"
-      />
-    </div>
-
-    <q-separator vertical inset />
-
-    <div class="toolbar-section">
-      <q-select
-        v-model="selectedSize"
-        :options="canvasSizes"
-        option-label="label"
-        option-value="value"
-        label="Canvas Size"
-        dense
-        outlined
-        style="min-width: 180px"
-        @update:model-value="$emit('change-canvas-size', $event.value)"
-      />
-    </div>
-
-    <q-separator vertical inset />
-
-    <div class="toolbar-section">
-      <q-btn
-        flat
-        icon="undo"
-        @click="$emit('undo')"
-        :disable="!canUndo"
       >
-        <q-tooltip>Undo</q-tooltip>
-      </q-btn>
-      <q-btn
-        flat
-        icon="redo"
-        @click="$emit('redo')"
-        :disable="!canRedo"
-      >
-        <q-tooltip>Redo</q-tooltip>
+        <q-tooltip anchor="center right" self="center left">Add Image</q-tooltip>
+        <q-badge
+          color="accent"
+          floating
+          rounded
+          class="add-badge"
+        >
+          <q-icon name="add" size="8px" />
+        </q-badge>
       </q-btn>
     </div>
+
+    <q-separator inset />
 
     <q-space />
 
     <div class="toolbar-section">
       <q-btn
         flat
+        round
         icon="download"
-        label="Export"
         color="positive"
         @click="$emit('export')"
-      />
+      >
+        <q-tooltip anchor="center right" self="center left">Export</q-tooltip>
+      </q-btn>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Size } from './types';
-
-interface CanvasSizeOption {
-  label: string;
-  value: Size;
-}
-
 interface Props {
-  canUndo?: boolean;
-  canRedo?: boolean;
+  // Empty for now, simplified
 }
 
 interface Emits {
   (e: 'add-text'): void;
   (e: 'add-image'): void;
-  (e: 'change-canvas-size', size: Size): void;
-  (e: 'undo'): void;
-  (e: 'redo'): void;
   (e: 'export'): void;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  canUndo: false,
-  canRedo: false
-});
+const props = defineProps<Props>();
 
 const emit = defineEmits<Emits>();
 
-const canvasSizes: CanvasSizeOption[] = [
-  { label: 'Instagram Post (1080x1080)', value: { width: 1080, height: 1080 } },
-  { label: 'Instagram Story (1080x1920)', value: { width: 1080, height: 1920 } },
-  { label: 'Facebook Post (1200x630)', value: { width: 1200, height: 630 } },
-  { label: 'Twitter Post (1200x675)', value: { width: 1200, height: 675 } },
-  { label: 'LinkedIn Post (1200x627)', value: { width: 1200, height: 627 } }
-];
-
-const selectedSize = ref<CanvasSizeOption>(canvasSizes[0]);
+// Minimal toolbar logic
 </script>
 
 <style scoped>
 .toolbar {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 16px 8px;
   background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid #e0e0e0;
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  width: 64px;
 }
 
 .toolbar-section {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 8px;
+  width: 100%;
+}
+
+:deep(.add-badge) {
+  opacity: 0.5;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.toolbar-btn:hover :deep(.add-badge) {
+  opacity: 1;
+  transform: scale(1.1);
 }
 </style>
