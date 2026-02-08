@@ -79,7 +79,9 @@ import  { TextNode as TextNodeType,
   NodeType,
   Position,
   Size,
-  AlignmentGuide
+  AlignmentGuide,
+  CanvasState,
+  GraphicNode
 } from './types';
 
 // Canvas state
