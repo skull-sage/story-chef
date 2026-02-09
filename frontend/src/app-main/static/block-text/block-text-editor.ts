@@ -1,4 +1,4 @@
-import type { BlockText, MarkType } from "./text-types"
+import type { BlockText, MarkType } from "./text-inline"
 
 
 export type Selection = {
