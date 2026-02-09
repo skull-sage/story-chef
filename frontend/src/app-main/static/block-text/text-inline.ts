@@ -2,10 +2,6 @@
 export type InlineType = "text" | "atom"
 
 
-export type BlockText = {
-  type: "block-text"
-  content: (TextNode | AtomNode)[]
-}
 
 export type TextNode = {
   type: "text"
