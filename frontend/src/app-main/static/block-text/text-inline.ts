@@ -6,7 +6,7 @@ export type InlineType = "text" | "atom"
 export type TextNode = {
   type: "text"
   text: string
-  mark: MarkType
+  mark?: MarkType
 }
 
 export type AtomNode = {
@@ -27,7 +27,7 @@ export type MarkLink = {
 
 export type MarkHighlight = {
   type: "highlight"
-  style: string // h-underline | underline | h-circle | bg-line | h-bg-line
+  styleClz: string // uline | h-uline | bg-line | h-bg-line | h-circle
   color: string
 }
 

@@ -28,21 +28,8 @@ export type BlockText = BlockNode & {
 
 export type BlockNode = {
   type: string
-  prev: string
-  next: string
-  parent: string
-  id: string | number
-}
-
-export type NinSelection = {
-  startBlockId: string | number // upper block of the selection as doc is top-down rendered
-  endBlockId: string | number // below block of the selection as doc is top-down rendered
-  startOffset: number // offset of the selection in the upper block
-  endOffset: number // offset of the selection in the below block
-  head: "start" | "end" // head of the selection
-}
-
-export type NinDoc = {
-  nodeMap: Record<string | number, BlockNode>
-  selection: NinSelection
+  prev: number
+  next: number
+  parent: number
+  id: number
 }

@@ -6,7 +6,8 @@
       "@/*": ["src/*"],
       "@commons/*": ["src/commons/*"],
       "@main/*": ["src/app-main/*"]
-    }
+    },
+    "lib": ["esnext", "dom"]
   },
   "exclude": [
     "./dist",
