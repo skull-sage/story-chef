@@ -55,44 +55,68 @@ export default defineComponent({
       userOffset: number
     ): number | null => {
       if (!userNode || !root.value) return null
-      // Check if node is inside root
-      if (!root.value.contains(userNode)) return null
+      // Check if node is inside root or is the root itself
+      if (!root.value.contains(userNode) && userNode !== root.value) return null
 
       let offset = 0
       const content = blockNode.value.content
       const children = Array.from(root.value.children)
 
-      // If userNode is root, userOffset is the child index
+      // -----------------------------------------------------------------------
+      // CASE 1: Selection is on the Root Element
+      // -----------------------------------------------------------------------
+      // The browser's Selection API sometimes places the anchor/focus on the
+      // container <div> itself (e.g., when clicking between blocks or on empty blocks).
+      // In this case, 'userOffset' represents the child index (which child the cursor is before),
+      // NOT a character index.
+      // Logic: Start offset = Sum(length of all items BEFORE the target child index)
       if (userNode === root.value) {
-        for (let i = 0; i < userOffset && i < content.length; i++) {
+        const targetIndex = Math.min(userOffset, content.length)
+        for (let i = 0; i < targetIndex; i++) {
           const item = content[i]
           offset += item.type === "text" ? item.text.length : 1
         }
         return offset
       }
 
-      // Otherwise find which child contains userNode
+      // -----------------------------------------------------------------------
+      // CASE 2: Selection is inside a Child Element (Span/Atom)
+      // -----------------------------------------------------------------------
+      // We iterate through content items. For each item, we check if the DOM 'userNode'
+      // is inside the corresponding rendered child.
+      // Logic: Start offset = Sum(length of previous items) + local_offset
       for (let i = 0; i < children.length; i++) {
         const child = children[i]
         const item = content[i]
         const itemLength = item.type === "text" ? item.text.length : 1
 
         if (child.contains(userNode)) {
-          // Found the child
+          // Found the child element corresponding to this content item
+
           if (item.type === "atom") {
-            // Atoms are treated as length 1
+            // Atoms have length 1.
+            // If selection is reported inside the atom wrapper, return its start position.
             return offset
           } else {
-            // Text node
+            // It's a Text Item (rendered as <span ...>text</span>)
+
+            // Sub-case A: userNode is the actual Text node inside the span
+            // userOffset is the character index within that text node.
             if (userNode.nodeType === Node.TEXT_NODE) {
               return offset + userOffset
             }
-            // If userNode is the SPAN itself
-            if (userOffset === 0) return offset
+
+            // Sub-case B: userNode is the SPAN element itself
+            // userOffset is the child index (0 = before text, 1 = after text)
+            if (userOffset === 0) {
+               return offset
+            }
+            // If after the text, return offset + length
             return offset + itemLength
           }
         }
 
+        // Add current item's length to total offset before moving to next
         offset += itemLength
       }
 
