@@ -22,23 +22,30 @@ const selectedRoute = ref(routeList[1])
         <q-list bordered separator round>
           <template v-for="aRoute in routeList" :key="aRoute.name">
 
-            <a-nav-item v-if="aRoute.children && aRoute.children.length" @click="selectedRoute = aRoute" >
+            <q-item v-if="aRoute.children && aRoute.children.length" clickable
+                  @click="selectedRoute = aRoute" >
               <q-item-section >
                 <q-item-label :class="{'text-indigo': aRoute.name === selectedRoute.name}">
                   {{aRoute.name}}
                 </q-item-label>
-                <q-item-label  caption v-if="aRoute.children && aRoute.children.length">
-                  {{aRoute.children?.length}} routes
-              </q-item-label>
-            </q-item-section>
-            </a-nav-item>
-            <a-nav-item v-else :route-name="aRoute.name">
-              <q-item-section >
-                <q-item-label :class="{'text-indigo': aRoute.name === selectedRoute.name}">
-                  {{aRoute.name}}
+                <q-item-label  caption>
+                  {{aRoute.children.length}} routes
                 </q-item-label>
             </q-item-section>
-            </a-nav-item>
+            </q-item>
+            <q-item
+              clickable
+              v-else
+              :to="{name: aRoute.name}"
+              active-class="text-indigo"
+            >
+              <q-item-section >
+                <q-item-label>
+                  {{aRoute.name}}
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+            <q-separator />
           </template>
 
         </q-list>
@@ -46,15 +53,18 @@ const selectedRoute = ref(routeList[1])
       <div class="col-md-4">
         <q-list class="bg-blue-1 q-pa-md" separator>
           <div class="text-h6 text-bold q-mb-sm">{{selectedRoute.name}}</div>
-          <a-nav-item v-for="item in selectedRoute.children"
-                   :key="item.name"
-                   :route-name="item.name"
+          <q-item
+            clickable
+            v-for="item in selectedRoute.children"
+            :key="item.name"
+            :to="{name: item.name}"
+            active-class="text-indigo"
           >
             <q-item-section>
               <q-item-label>{{item.name}}</q-item-label>
               <q-item-label caption> {{selectedRoute.path}}/{{item.path}}</q-item-label>
             </q-item-section>
-          </a-nav-item>
+          </q-item>
         </q-list>
       </div>
     </div>
