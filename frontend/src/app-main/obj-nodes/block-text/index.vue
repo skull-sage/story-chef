@@ -12,6 +12,7 @@
         :style="getMarkStyle(item.mark)"
       >{{ item.text }}</span>
       <span
+      :data-offset="item.offset"
         v-else-if="item.type === 'atom'"
         contenteditable="false"
         class="atom-element"
@@ -24,8 +25,9 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import type { InlineType, MarkType } from './text-inline';
+import type { InlineAtom, InlineText, MarkType } from './text-inline';
 import { TextSelection, calcTextLocalSelection } from './text-selection';
+
 
 // Helper functions for safely accessing mark properties since MarkType union is disjoint
 const getMarkClass = (mark?: MarkType) => {
@@ -45,7 +47,7 @@ const getMarkStyle = (mark?: MarkType) => {
 // Props receive shallowReactive data from parent
 const props = defineProps<{
   id: number;
-  content: (InlineType | InlineAtom)[];
+  content: (InlineText | InlineAtom)[];
 }>();
 
 const rootRef = ref<HTMLElement | null>(null);
@@ -57,6 +59,7 @@ const updateSelection = () => {
             return null;
         }
         selectionState.value = calcTextLocalSelection(sel, rootRef.value.children, props.content);
+        console.log(updateSelection)
 };
 
 onMounted(() => {
