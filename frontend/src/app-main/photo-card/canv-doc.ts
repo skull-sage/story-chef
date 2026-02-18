@@ -1,4 +1,4 @@
-import { BlockNode } from "./block-type"
+import { BlockNode } from "../obj-nodes/block-text/block-type"
 
 
 export type RangeSelection = {
@@ -18,8 +18,10 @@ export type Selection = {
 
 
 
-export type NinDoc = {
-  userMap: Record<string, User>
+
+export type CanvDoc = {
+  userClockMap: Record<string | number, number>
   nodeMap: Record<string | number, BlockNode>
-  selection: NinSelection
+  selection: Selection
+  selectionMap: Record<string | number, Selection>
 }

@@ -11,8 +11,8 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, shallowReactive } from "vue";
-import BlockText from "./block-text.vue";
-import { basicSample as basicSampleData, utilCalcInlineOffset } from "./data-sample";
+import BlockText from "./block-text/index.vue";
+import { basicSample as basicSampleData, utilCalcInlineOffset } from "./data-samples/block-text";
 
 // Use shallowReactive to make the data shallow reactive
 const basicSample = shallowReactive(basicSampleData);
@@ -39,40 +39,7 @@ function calcTextSelection(selRange:Range, childList:Element[]) {
 
 }
 
-const updateSelection = () => {
-  const sel = window.getSelection();
-  if(!sel){
-    selectionState.value = null;
-    return;
-  }
 
-  if(sel.rangeCount > 0){
-    let range = sel.getRangeAt(0);
-    let selection = calcTextSelection(range);
-
-    let focusXY = null;
-    const targetElement = sel.focusNode.nodeType === Node.TEXT_NODE
-      ? (sel.focusNode.parentElement as Element)
-      : (sel.focusNode as Element);
-
-    if(targetElement && targetElement.getBoundingClientRect){
-      const rect = targetElement.getBoundingClientRect();
-      focusXY = { x: rect.left, y: rect.top };
-    }
-    selectionState.value = {...selection, focusXY};
-  }
-
-};
-
-onMounted(() => {
-  document.addEventListener('selectionchange', updateSelection);
-  // Initialize
-  updateSelection();
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('selectionchange', updateSelection);
-});
 </script>
 
 <style scoped>

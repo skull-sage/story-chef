@@ -1,3 +1,5 @@
+import { BlockText } from "../block-text/block-type";
+
 
 export function utilCalcInlineOffset(content) {
   let offset = 0;
@@ -11,12 +13,12 @@ export function utilCalcInlineOffset(content) {
   }
 }
 
-export const basicSample = {
+export const basicSample: BlockText = {
   type: "block-text",
   id: 1,
   parent: 0,
-  prev: 0,
-  next: 0,
+  prev: null,
+  next: null,
   content: [
     {
       type: "text",

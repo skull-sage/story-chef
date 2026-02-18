@@ -2,7 +2,6 @@ import CompTest from './component/demo-activity-root.vue'
 import Animation from './animation/index.vue'
 import TestScreenRecorder from "./test-screen-recorder.vue";
 import NestTest from "./nest-test/index.vue"
-import DOMSelection from "./text-editor/dom-selection.vue"
 import {RouteRecordRaw} from "vue-router";
 
 
@@ -15,11 +14,6 @@ const routeConfig: RouteRecordRaw =  {
           name: 'demo.comp-test',
           component: CompTest,
 
-        },
-        {
-          path: 'text-selection',
-          name: 'demo.text-selection',
-          component: DOMSelection
         },
         {
           path: 'screen-record',
