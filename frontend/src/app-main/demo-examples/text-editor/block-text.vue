@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="rootRef"
     class="editable-content"
     contenteditable="true"
   >
@@ -21,11 +22,23 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { useTextEditor } from './use-text-editor';
+
 // Props receive shallowReactive data from parent
 const props = defineProps<{
   id: number;
   content: any[];
 }>();
+
+const rootRef = ref<HTMLElement | null>(null);
+
+const { updateSelection, selectionState } = useTextEditor(rootRef);
+
+defineExpose({
+    updateSelection,
+    selectionState
+});
 </script>
 
 <style scoped>
