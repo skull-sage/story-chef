@@ -6,13 +6,11 @@
   >
     <template v-for="(item, idx) in content" :key="idx">
       <span
-        :data-offset="item.offset"
         v-if="item.type === 'text'"
         :class="getMarkClass(item.mark)"
         :style="getMarkStyle(item.mark)"
       >{{ item.text }}</span>
       <span
-      :data-offset="item.offset"
         v-else-if="item.type === 'atom'"
         contenteditable="false"
         class="atom-element"
@@ -51,15 +49,15 @@ const props = defineProps<{
 }>();
 
 const rootRef = ref<HTMLElement | null>(null);
-const selectionState = ref<TextSelection | null>(null);
+//const selectionState = ref<TextSelection | null>(null);
 
 const updateSelection = () => {
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) {
             return null;
         }
-        selectionState.value = calcTextLocalSelection(sel, rootRef.value.children, props.content);
-        console.log(updateSelection)
+        let selectionState = calcTextLocalSelection(sel, rootRef.value.children, props.content);
+        console.log(selectionState)
 };
 
 onMounted(() => {

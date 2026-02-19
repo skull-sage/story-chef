@@ -1,18 +1,15 @@
 
-export type InlineType = {
-  offset: number
-  type: "text" | "atom"
-}
+export type InlineType = InlineText | InlineAtom
 
 
 
-export type InlineText = InlineType & {
+export type InlineText = {
   type: "text"
   text: string
   mark?: MarkType
 }
 
-export type InlineAtom = InlineType & {
+export type InlineAtom = {
   type: "atom"
   name: string // vue component name to render
   attrs: Record<string, any>

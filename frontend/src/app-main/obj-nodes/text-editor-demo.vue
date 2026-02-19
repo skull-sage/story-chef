@@ -16,7 +16,7 @@ import { basicSample as basicSampleData, utilCalcInlineOffset } from "./data-sam
 
 // Use shallowReactive to make the data shallow reactive
 const basicSample = shallowReactive(basicSampleData);
-utilCalcInlineOffset(basicSample.content);
+//utilCalcInlineOffset(basicSample.content);
 
 const selectionState = ref<any>(null);
 
