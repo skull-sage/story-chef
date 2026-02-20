@@ -15,9 +15,11 @@ export type InlineAtom = {
   attrs: Record<string, any>
 }
 
+
 export type MarkFormat = {
   type: "format"
-  format: "bold" | "italic" | "strike"
+  format: "bold" | "italic" | "strike" | "code"
+
 }
 
 export type MarkLink = {
@@ -32,10 +34,6 @@ export type MarkHighlight = {
 }
 
 
-export type MarkCode = {
-  type: "code"
-}
-
-export type MarkType = MarkFormat | MarkLink | MarkHighlight | MarkCode
+export type MarkType = MarkFormat | MarkLink | MarkHighlight
 
 

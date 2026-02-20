@@ -4,6 +4,7 @@ import { TextSelection } from "./text-selection"
 
 
 
+
 function expand(fillArray: InlineType[], text: string, mark: MarkType) {
   // implement: each character of text is an InlineVal with the mark
   for (let i = 0; i < text.length; i++) {
@@ -56,6 +57,7 @@ function collapseInline(expanded: InlineType[]): InlineType[] {
     }
 
   }
+  return newInlines;
 }
 
 export default {
