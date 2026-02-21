@@ -2,6 +2,7 @@ import type { InlineText, InlineAtom, InlineType } from "./text-inline"
 import type { BlockText } from "./block-type"
 import { TextSelection } from "./text-selection"
 import { isMarkEqual, MarkType } from "./mark-inline";
+import { debug } from "console";
 
 
 
@@ -75,11 +76,16 @@ export default {
     const content = node.content;
 
 
+
     // if selection contains an atom, return false
     for (let i = start.inlineIdx; i <= end.inlineIdx; i++) {
       if (content[i].type === "atom") return false;
-      if (isMarkEqual((content[i] as InlineText).mark, mark)) {
-        mark = undefined // no need to apply the mark
+      else {
+        const item = content[i] as InlineText;
+        if (isMarkEqual(item.mark, mark)) {
+          mark = undefined // no need to apply the mark
+          debugger
+        }
       }
     }
 
@@ -102,11 +108,15 @@ export default {
     }
 
     let suffixSlice = endItem.text.slice(end.offset);
+    debugger;
     if (suffixSlice)
       newSegments.push({ type: "text", text: suffixSlice, mark: endItem.mark });
 
     // splice new segments in place of the old range
     content.splice(start.inlineIdx, end.inlineIdx - start.inlineIdx + 1, ...newSegments);
+
+    if (!node.renderKey) node.renderKey = 0
+    node.renderKey++;
 
     return true;
   }

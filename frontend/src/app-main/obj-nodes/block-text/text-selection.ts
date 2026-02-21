@@ -33,13 +33,13 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
     if (child.contains(startContainer)) {
       start = { inlineIdx: idx, offset: startOffset };
     }
-    if (start && child)
-      if (child.contains(endContainer)) {
-        end = { inlineIdx: idx, offset: endOffset };
-      }
+
+    if (child.contains(endContainer)) {
+      end = { inlineIdx: idx, offset: endOffset };
+    }
   }
 
-  if (start.inlineIdx && start.inlineIdx == end.inlineIdx) {
+  if (start && end && start.inlineIdx == end.inlineIdx) {
     if (blockContent[start.inlineIdx].type == 'text')
       mark = (blockContent[start.inlineIdx] as InlineText).mark;
   }

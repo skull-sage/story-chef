@@ -27,6 +27,7 @@ export type BlockText = BlockNode & {
 }
 
 export type BlockNode = {
+  renderKey: number
   type: string
   prev: number
   next: number

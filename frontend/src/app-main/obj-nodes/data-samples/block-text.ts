@@ -19,6 +19,7 @@ export const basicSample: BlockText = {
   parent: 0,
   prev: null,
   next: null,
+  renderKey: 1,
   content: [
     {
       type: "text",
