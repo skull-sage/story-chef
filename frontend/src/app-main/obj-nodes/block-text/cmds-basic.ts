@@ -5,62 +5,33 @@ import { isMarkEqual, MarkType } from "./mark-inline";
 import { debug } from "console";
 
 
+function copySlice(content: InlineType[], sel: TextSelection) {
+  const { start, end } = sel;
+  const newSegments: InlineType[] = [];
+  let startItem = content[start.inlineIdx] as InlineText;
+  let endItem = content[end.inlineIdx] as InlineText;
 
+  let prefixSlice = startItem.text.slice(0, start.offset);
+  if (prefixSlice)
+    newSegments.push({ type: "text", text: prefixSlice, mark: startItem.mark });
 
-// function expand(fillArray: InlineType[], text: string, mark: MarkType) {
-//   // implement: each character of text is an InlineVal with the mark
-//   for (let i = 0; i < text.length; i++) {
-//     fillArray.push({ type: "text", text: text[i], mark: mark });
-//   }
+  let contentSlice = startItem.text.slice(start.offset, startItem.text.length);
+  for (let i = start.inlineIdx + 1; i < end.inlineIdx; i++) {
+    let item = content[i] as InlineText
+    contentSlice += item.text;
+  }
+  if (contentSlice) {
+    newSegments.push({ type: "text", text: contentSlice, mark: mark });
+  }
 
-// }
+  let suffixSlice = endItem.text.slice(end.offset);
+  debugger;
+  if (suffixSlice)
+    newSegments.push({ type: "text", text: suffixSlice, mark: endItem.mark });
 
-// function exapndInline(content: InlineType[], fromIdx: number, toIdx: number) {
-//   const expanded: InlineType[] = [];
-//   for (let i = fromIdx; i <= toIdx; i++) {
-//     if (content[i].type == 'atom') {
-//       expanded.push(content[i]);
-//     }
-//     if (content[i].type === "text") {
-//       const inline = content[i] as InlineText;
-//       expand(expanded, inline.text, inline.mark);
-//     }
-//     return expanded;
-//   }
-// }
+  return newSegments;
+}
 
-// function collapseInline(expanded: InlineType[]): InlineType[] {
-//   const newInlines: InlineType[] = [];
-
-
-//   for (let i = 0; i < expanded.length; i++) {
-//     const iv = expanded[i];
-
-//     if (iv.type == 'atom') {
-//       newInlines.push(iv);
-//       continue;
-//     }
-//     // type == ''text'
-//     const inline = iv as InlineText;
-//     let buf = "";
-//     let curMark = inline.mark;
-//     for (let j = i + 1; j < expanded.length; j++) {
-//       const next = expanded[j];
-//       if (next.type == 'atom') {
-//         break;
-//       }
-//       const inline = next as InlineText;
-//       if (inline.mark === curMark) {
-//         buf += inline.text;
-//       } else if (buf.length > 0) {
-//         newInlines.push({ type: "text", text: buf, mark: curMark });
-//         break;
-//       }
-//     }
-
-//   }
-//   return newInlines;
-// }
 
 export default {
   replaceText(node: BlockText, text: string, selection: TextSelection) {
@@ -75,16 +46,15 @@ export default {
     const { start, end } = selection;
     const content = node.content;
 
-
-
-    // if selection contains an atom, return false
+    // if selection contains an atom, we don't apply mark and return false
+    // if selection contains a text with same mark,
+    //we clear existing mark with undefined
     for (let i = start.inlineIdx; i <= end.inlineIdx; i++) {
       if (content[i].type === "atom") return false;
-      else {
-        const item = content[i] as InlineText;
+      else if (content[i].type === "text") {
+        let item = content[i] as InlineText;
         if (isMarkEqual(item.mark, mark)) {
-          mark = undefined // no need to apply the mark
-          debugger
+          mark = undefined;
         }
       }
     }
@@ -98,17 +68,25 @@ export default {
     if (prefixSlice)
       newSegments.push({ type: "text", text: prefixSlice, mark: startItem.mark });
 
-    let contentSlice = startItem.text.slice(start.offset, startItem.text.length);
-    for (let i = start.inlineIdx + 1; i < end.inlineIdx; i++) {
-      let item = content[i] as InlineText
-      contentSlice += item.text;
+    let selectedSlice: string;
+    if (start.inlineIdx == end.inlineIdx) {
+      selectedSlice = startItem.text.slice(start.offset, end.offset);
+
+
+    } else {
+
+      selectedSlice = startItem.text.slice(start.offset, startItem.text.length);
+      for (let i = start.inlineIdx + 1; i < end.inlineIdx; i++) {
+        let item = content[i] as InlineText
+        selectedSlice += item.text;
+      }
+      selectedSlice += endItem.text.slice(0, end.offset);
     }
-    if (contentSlice) {
-      newSegments.push({ type: "text", text: contentSlice, mark: mark });
+    if (selectedSlice) {
+      newSegments.push({ type: "text", text: selectedSlice, mark: mark });
     }
 
     let suffixSlice = endItem.text.slice(end.offset);
-    debugger;
     if (suffixSlice)
       newSegments.push({ type: "text", text: suffixSlice, mark: endItem.mark });
 

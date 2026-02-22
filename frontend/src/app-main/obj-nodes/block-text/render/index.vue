@@ -26,7 +26,7 @@ import type { InlineAtom, InlineText } from '../text-inline';
 import type { BlockText } from '../block-type';
 import { type TextSelection, calcTextLocalSelection } from '../text-selection';
 import InlineTextNode from './inline-text.vue';
-import CmdsText from '../cmds-text';
+import CmdsText from '../cmds-basic';
 import { markForKey } from '../keybindings';
 
 
