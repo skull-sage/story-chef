@@ -4,7 +4,44 @@ import { TextSelection } from "./text-selection"
 import { isMarkEqual, MarkType } from "./mark-inline";
 import { debug } from "console";
 
+type Expanded = {
+  valArr: (number|InlineAtom)[], // utf16-CharCode or Atom
+  markArr: (MarkType|undefined)[],
+  from: number,
+  to: number,
+}
 
+function expandText(valArr: (number|InlineAtom)[], markArr: (MarkType|undefined)[], item: InlineText){
+  for (let i = 0; i < item.text.length; i++) {
+    valArr.push(item.text.charCodeAt(i));
+    markArr.push(item.mark);
+  }
+}
+
+
+function expandSlice(content:InlineType[], sel:TextSelection){
+  let {start, end} = sel
+  let valArr: (number|InlineAtom)[] = [];
+  let markArr: (MarkType|undefined)[] = [];
+  let from = start.offset;
+  let prefixCount = from;
+
+  
+
+  for (let i = start.inlineIdx; i <= end.inlineIdx; i++) {
+    let item:InlineType = content[i];
+    
+    if (item.type == 'atom') {
+      valArr.push(item);
+      markArr.push(undefined);
+      prefixCount++;
+    } else {
+      expandText(valArr, markArr, item as InlineText);
+      prefixCount += item.text.length; 
+    } 
+  } 
+  
+}
 
 export default {
   replaceText(node: BlockText, text: string, selection: TextSelection) {

@@ -42,16 +42,10 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
   if (start && end && start.inlineIdx == end.inlineIdx) {
     if (blockContent[start.inlineIdx].type == 'text')
       mark = (blockContent[start.inlineIdx] as InlineText).mark;
-  }
-
-  // if start and end inline-container are same and not atom, we know the mark
-  // let inline: InlineType = blockContent[idx];
-  // if (blockContent[idx].type == 'text') {
-  //   mark = (blockContent[idx] as InlineText).mark
-  // }
+  } 
 
   // checking locality: both start and end of selection should be bounded by the text block
-  if (start && end == false)
+  if (start == undefined || end == undefined)
     return null;
 
   return { start, end, focus, mark };
