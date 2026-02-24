@@ -26,9 +26,20 @@ function expandSlice(content:InlineType[], sel:TextSelection){
   let from = start.offset;
   let prefixCount = from;
 
-  
+  if(start.inlineIdx == end.inlineIdx){
+    
+    let item = content[start.inlineIdx] ;
+    if(item.type == 'atom'){
+      valArr.push(item);
+      markArr.push(undefined)
+      prefixCount++;
+    } else {
+      expandText(valArr, markArr, item as InlineText);
+      prefixCount += end.offset;
+    } 
+  }
 
-  for (let i = start.inlineIdx; i <= end.inlineIdx; i++) {
+  for (let i = start.inlineIdx; i <= end.inlineIdx && end.offset > 0; i++) {
     let item:InlineType = content[i];
     
     if (item.type == 'atom') {
