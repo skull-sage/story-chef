@@ -1,58 +1,91 @@
-import type { InlineText, InlineAtom, InlineType } from "./text-inline"
+import { InlineText, InlineAtom, InlineType } from "./text-inline"
 import type { BlockText } from "./block-type"
 import { TextSelection } from "./text-selection"
 import { isMarkEqual, MarkType } from "./mark-inline";
 import { debug } from "console";
 
-type ValType = {
-  val: number | InlineAtom,
-  mark?: MarkType
-  del?: boolean
-  id?:number
-}
 
-type FlatStruct = {
-  valArr : ValType[],
-  from: number,
-  to: number
-}
+class BlockFlat {
+  valArr: (number | InlineAtom)[] = [];
+  markArr: (MarkType | undefined)[] = [];
 
-function expandItem(flat: FlatStruct, item: InlineType){
-
-  if(item.isText()){
-    for (let i = 0; i < item.text.length; i++) {
-      flat.valArr.push({val: item.text.charCodeAt(i), mark: item.mark});
-
+  constructor(content: InlineType[]) {
+    for (let idx = 0; idx < content.length; idx++) {
+      let item = content[idx];
+      if (item.isText()) {
+        for (let i = 0; i < item.text.length; i++) {
+          this.valArr.push(item.text.charCodeAt(i));
+          this.markArr.push(item.mark);
+        }
+      } else {
+        this.valArr.push(item as InlineAtom);
+        this.markArr.push(undefined);
+      }
     }
-  } else {
-    flat.valArr.push({val: item as InlineAtom, mark: undefined});
+  }
+
+  applyMark(from: number, to: number, mark: MarkType): InlineType[] {
+    for (let idx = from; idx < to; idx++) {
+         this.markArr[idx] = mark;
+    }
+
+    const newContent: InlineType[] = [];
+    let currentMark: MarkType | undefined = this.markArr[0];
+    let currentText = "";
+
+    for (let idx = 0; idx < this.valArr.length; idx++) {
+      if (typeof this.valArr[idx] === "number") {
+        if (this.markArr[idx] !== currentMark) {
+          if (currentText) {
+            newContent.push(new InlineText(currentText, currentMark));
+          }
+          currentMark = this.markArr[idx];
+          currentText = "";
+        }
+        currentText += String.fromCharCode(this.valArr[idx] as number);
+      } else {
+        if (currentText) {
+          newContent.push(new InlineText(currentText, currentMark));
+          currentText = "";
+        }
+        newContent.push(new InlineAtom(this.valArr[idx] as InlineAtom, undefined));
+      }
+    }
+
+    if (currentText) {
+      newContent.push(new InlineText(currentText, currentMark));
+    }
+
+    return newContent;
 
   }
 }
 
 
 export function expandSlice(content:InlineType[], sel:TextSelection){
-  let {start, end} = sel
-  let flat: FlatStruct = {valArr: [], from: 0, to: 0};
+  let {from, to} = sel
+  const valArr: ValType[] = [];
 
+  for (let idx=0; idx<content.length; idx++){
+    let item = content[idx];
+    if(item.isText()){
+      for (let i = 0; i < item.text.length; i++) {
+        valArr.push({val: item.text.charCodeAt(i), mark: item.mark});
+      }
+    } else {
+        valArr.push({val: item as InlineAtom, mark: undefined});
 
-  flat.from = start.offset;
-  flat.to = 0;
-  for(let idx=start.inlineIdx; idx < end.inlineIdx; idx++){
-    expandItem(flat, content[idx]);
-    flat.to += content[idx].length();
+    }
   }
 
-  expandItem(flat, content[end.inlineIdx]);
-  flat.to += end.offset;
 
 
-  console.log("from", flat.from, "to", flat.to);
+  console.log("from", from, "to", to);
   let result = ""
-  for(let idx=flat.from; idx<flat.to; idx++){
-     let item = flat.valArr[idx];
-     if (typeof item === "number")
-      result += String.fromCharCode(item as number);
+  for(let idx=from; idx<to; idx++){
+     let item = valArr[idx];
+     if (typeof item.val === "number")
+      result += String.fromCharCode(item.val as number);
     else result += "(atom)";
   }
   console.log("#:", result);

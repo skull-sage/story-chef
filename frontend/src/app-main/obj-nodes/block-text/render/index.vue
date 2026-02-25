@@ -8,13 +8,13 @@
     @mouseup="onMouseup"
   >
     <template v-for="(item, idx) in node.content" :key="idx">
-      <InlineTextNode v-if="item.isText()" :node="item" />
+      <NodeText v-if="item.isText()" :node="item as InlineText" />
       <span
-        v-else-if="item.type === 'atom'"
+        v-else
         contenteditable="false"
         class="atom-element"
       >
-        {{ item.attrs?.placeholder || item.name }}
+        {{ (item as InlineAtom).name }}
       </span>
     </template>
   </div>
@@ -22,12 +22,12 @@
 
 <script setup lang="ts">
 import { isReactive, onBeforeUnmount, onMounted, ref } from 'vue';
-import type { InlineAtom, InlineText } from '../text-inline';
 import type { BlockText } from '../block-type';
 import { type TextSelection, calcTextLocalSelection } from '../text-selection';
-import InlineTextNode from './inline-text.vue';
+import NodeText from './node-text.vue';
 import CmdsText from '../cmds-basic';
 import { markForKey } from '../keybindings';
+import { InlineAtom, InlineText } from '../text-inline';
 
 
 // Props receive shallowReactive data from parent

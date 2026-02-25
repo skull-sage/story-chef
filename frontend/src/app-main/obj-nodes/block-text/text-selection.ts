@@ -4,13 +4,15 @@ import { InlineText, InlineType } from "./text-inline";
 import { MarkType } from "./mark-inline";
 import {expandSlice} from "./cmds-basic";
 
-
+6710
 
 
 // Helper type for selection state
 export interface TextSelection {
-  start: { inlineIdx: number, offset: number };
-  end: { inlineIdx: number, offset: number };
+  start: { inlineIdx: number, prefixLen:number, offset: number };
+  end: { inlineIdx: number, prefixLen:number, offset: number };
+  from: number;
+  to: number;
   focusXY?: { x: number; y: number } | null;
   mark?: MarkType;
 }
@@ -32,27 +34,25 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
   let start //: HTMLElement = findContainerInline(startContainer);
   let end//: HTMLElement = findContainerInline(endContainer);
   let mark: MarkType;
+  let from, prefixCount, to = 0;
+
 
   for (let idx = 0; idx < childList.length; idx++) {
     if (childList[idx].contains(startContainer)) {
-      if (blockContent[idx].length() == startOffset) {
-        start = { inlineIdx: idx + 1, offset: 0 };
-      } else {
-        start = { inlineIdx: idx, offset: startOffset };
-      }
-      break;
+        start = { inlineIdx: idx, prefixLen:prefixCount, offset: startOffset };
+        from = prefixCount + startOffset;
+        break
     }
+    prefixCount += blockContent[idx].length();
   }
 
   for (let idx = start.inlineIdx; idx < childList.length; idx++) {
     if (childList[idx].contains(endContainer)) {
-      if (idx != start.inlineIdx && endOffset==0) {
-        end = { inlineIdx: idx - 1, offset: blockContent[idx-1].length() };
-      } else {
-        end = { inlineIdx: idx, offset: endOffset };
-      }
+      end = { inlineIdx: idx, prefixLen: prefixCount, offset: endOffset };
+      to = prefixCount + endOffset;
       break;
     }
+    prefixCount += blockContent[idx].length();
   }
 
 
@@ -65,31 +65,11 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
       mark = (blockContent[start.inlineIdx] as InlineText).mark;
   }
 
-  let selection: TextSelection = { start, end, focusXY: calcFocusPos(sel), mark };
-   expandSlice(blockContent, selection);
+  let selection: TextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
+
+  expandSlice(blockContent, selection);
 
   return selection;
-}
-
-const findContainerInline = (nodeElm: Node) => {
-  let elm: HTMLElement;
-
-  if (nodeElm instanceof Node == false)
-    return undefined;
-
-  if (nodeElm instanceof HTMLElement) {
-    elm = nodeElm;
-  }
-  else {
-    elm = nodeElm.parentElement;
-  }
-
-  while (!elm.dataset.offset) {
-    elm = elm.parentElement;
-  }
-
-  return elm;
-
 }
 
 const calcFocusPos = (sel: Selection) => {
