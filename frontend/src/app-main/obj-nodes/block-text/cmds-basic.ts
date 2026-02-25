@@ -4,54 +4,59 @@ import { TextSelection } from "./text-selection"
 import { isMarkEqual, MarkType } from "./mark-inline";
 import { debug } from "console";
 
-type Expanded = {
-  valArr: (number|InlineAtom)[], // utf16-CharCode or Atom
-  markArr: (MarkType|undefined)[],
+type ValType = {
+  val: number | InlineAtom,
+  mark?: MarkType
+  del?: boolean
+  id?:number
+}
+
+type FlatStruct = {
+  valArr : ValType[],
   from: number,
-  to: number,
+  to: number
 }
 
-function expandText(valArr: (number|InlineAtom)[], markArr: (MarkType|undefined)[], item: InlineText){
-  for (let i = 0; i < item.text.length; i++) {
-    valArr.push(item.text.charCodeAt(i));
-    markArr.push(item.mark);
+function expandItem(flat: FlatStruct, item: InlineType){
+
+  if(item.isText()){
+    for (let i = 0; i < item.text.length; i++) {
+      flat.valArr.push({val: item.text.charCodeAt(i), mark: item.mark});
+
+    }
+  } else {
+    flat.valArr.push({val: item as InlineAtom, mark: undefined});
+
   }
 }
 
 
-function expandSlice(content:InlineType[], sel:TextSelection){
+export function expandSlice(content:InlineType[], sel:TextSelection){
   let {start, end} = sel
-  let valArr: (number|InlineAtom)[] = [];
-  let markArr: (MarkType|undefined)[] = [];
-  let from = start.offset;
-  let prefixCount = from;
+  let flat: FlatStruct = {valArr: [], from: 0, to: 0};
 
-  if(start.inlineIdx == end.inlineIdx){
-    
-    let item = content[start.inlineIdx] ;
-    if(item.type == 'atom'){
-      valArr.push(item);
-      markArr.push(undefined)
-      prefixCount++;
-    } else {
-      expandText(valArr, markArr, item as InlineText);
-      prefixCount += end.offset;
-    } 
+
+  flat.from = start.offset;
+  flat.to = 0;
+  for(let idx=start.inlineIdx; idx < end.inlineIdx; idx++){
+    expandItem(flat, content[idx]);
+    flat.to += content[idx].length();
   }
 
-  for (let i = start.inlineIdx; i <= end.inlineIdx && end.offset > 0; i++) {
-    let item:InlineType = content[i];
-    
-    if (item.type == 'atom') {
-      valArr.push(item);
-      markArr.push(undefined);
-      prefixCount++;
-    } else {
-      expandText(valArr, markArr, item as InlineText);
-      prefixCount += item.text.length; 
-    } 
-  } 
-  
+  expandItem(flat, content[end.inlineIdx]);
+  flat.to += end.offset;
+
+
+  console.log("from", flat.from, "to", flat.to);
+  let result = ""
+  for(let idx=flat.from; idx<flat.to; idx++){
+     let item = flat.valArr[idx];
+     if (typeof item === "number")
+      result += String.fromCharCode(item as number);
+    else result += "(atom)";
+  }
+  console.log("#:", result);
+
 }
 
 export default {
@@ -79,6 +84,8 @@ export default {
         // }
       }
     }
+
+    expandSlice(content, selection);
 
 
     const newSegments: InlineType[] = [];
@@ -116,6 +123,7 @@ export default {
 
     content.splice(start.inlineIdx, end.inlineIdx - start.inlineIdx + 1, ...newSegments);
 
+    console.log(content);
     if (!node.renderKey) node.renderKey = 0
     node.renderKey++;
 

@@ -1,6 +1,8 @@
 
 import { text } from "animejs";
-import { InlineText, InlineType, MarkType } from "./text-inline";
+import { InlineText, InlineType } from "./text-inline";
+import { MarkType } from "./mark-inline";
+import {expandSlice} from "./cmds-basic";
 
 
 
@@ -10,16 +12,20 @@ export interface TextSelection {
   start: { inlineIdx: number, offset: number };
   end: { inlineIdx: number, offset: number };
   focusXY?: { x: number; y: number } | null;
+  mark?: MarkType;
 }
 
 
 // calc text selection so that the selection is bounded by a single text block
 
-export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection, blockContent: InlineType[]) {
+export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection, blockContent: InlineType[]) :TextSelection {
 
   if (sel.rangeCount === 0) {
     return null;
   }
+
+
+  //## NEED TO SIMPLIFY THIS LOGIC, MAYBE BY USING A FLAT STRUCTURE FOR THE TEXT BLOCK CONTENT
 
   let { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
 
@@ -28,27 +34,41 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
   let mark: MarkType;
 
   for (let idx = 0; idx < childList.length; idx++) {
-    let child = childList[idx];
-
-    if (child.contains(startContainer)) {
-      start = { inlineIdx: idx, offset: startOffset };
-    }
-
-    if (child.contains(endContainer)) {
-      end = { inlineIdx: idx, offset: endOffset };
+    if (childList[idx].contains(startContainer)) {
+      if (blockContent[idx].length() == startOffset) {
+        start = { inlineIdx: idx + 1, offset: 0 };
+      } else {
+        start = { inlineIdx: idx, offset: startOffset };
+      }
+      break;
     }
   }
 
-  if (start && end && start.inlineIdx == end.inlineIdx) {
-    if (blockContent[start.inlineIdx].type == 'text')
-      mark = (blockContent[start.inlineIdx] as InlineText).mark;
-  } 
+  for (let idx = start.inlineIdx; idx < childList.length; idx++) {
+    if (childList[idx].contains(endContainer)) {
+      if (idx != start.inlineIdx && endOffset==0) {
+        end = { inlineIdx: idx - 1, offset: blockContent[idx-1].length() };
+      } else {
+        end = { inlineIdx: idx, offset: endOffset };
+      }
+      break;
+    }
+  }
+
 
   // checking locality: both start and end of selection should be bounded by the text block
   if (start == undefined || end == undefined)
     return null;
 
-  return { start, end, focus, mark };
+  if (start && end && start.inlineIdx == end.inlineIdx) {
+    if (blockContent[start.inlineIdx].isText())
+      mark = (blockContent[start.inlineIdx] as InlineText).mark;
+  }
+
+  let selection: TextSelection = { start, end, focusXY: calcFocusPos(sel), mark };
+   expandSlice(blockContent, selection);
+
+  return selection;
 }
 
 const findContainerInline = (nodeElm: Node) => {

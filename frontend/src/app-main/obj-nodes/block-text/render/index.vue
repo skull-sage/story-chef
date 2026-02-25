@@ -8,7 +8,7 @@
     @mouseup="onMouseup"
   >
     <template v-for="(item, idx) in node.content" :key="idx">
-      <InlineTextNode v-if="item.type === 'text'" :node="item" />
+      <InlineTextNode v-if="item.isText()" :node="item" />
       <span
         v-else-if="item.type === 'atom'"
         contenteditable="false"
@@ -59,8 +59,7 @@ const onKeydown = (e: KeyboardEvent) => {
   const sel = selectionState;
   if (!sel) return;
   CmdsText.toggleMark(props.node, mark, sel);
-  console.log("isReactive", isReactive(props.node))
-  console.log(props.node)
+
 
 };
 
