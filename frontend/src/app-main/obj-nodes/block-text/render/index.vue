@@ -8,14 +8,15 @@
     @mouseup="onMouseup"
   >
     <template v-for="(item, idx) in node.content" :key="idx">
-      <NodeText v-if="item.isText()" :node="item as InlineText" />
-      <span
-        v-else
+       <span
+        v-if="item instanceof InlineAtom"
         contenteditable="false"
         class="atom-element"
       >
         {{ (item as InlineAtom).name }}
       </span>
+      <NodeText v-else :node="item as InlineText" />
+
     </template>
   </div>
 </template>
@@ -58,7 +59,7 @@ const onKeydown = (e: KeyboardEvent) => {
   console.log(e, mark)
   const sel = selectionState;
   if (!sel) return;
-  CmdsText.toggleMark(props.node, mark, sel);
+  CmdsText.applyMark(props.node, mark, sel);
 
 
 };

@@ -2,7 +2,7 @@
 import { text } from "animejs";
 import { InlineText, InlineType } from "./text-inline";
 import { MarkType } from "./mark-inline";
-import {expandSlice} from "./cmds-basic";
+import { FlatContent } from "./cmds-basic";
 
 6710
 
@@ -63,11 +63,12 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
   if (start && end && start.inlineIdx == end.inlineIdx) {
     if (blockContent[start.inlineIdx].isText())
       mark = (blockContent[start.inlineIdx] as InlineText).mark;
+    else mark = undefined;
   }
 
   let selection: TextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
 
-  expandSlice(blockContent, selection);
+  FlatContent.expand(blockContent).log(selection.from, selection.to);
 
   return selection;
 }

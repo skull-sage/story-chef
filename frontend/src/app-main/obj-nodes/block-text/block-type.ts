@@ -1,4 +1,4 @@
-import { InlineAtom, InlineText } from "./text-inline"
+import { InlineAtom, InlineText, InlineType } from "./text-inline"
 
 export type BlockAtom = BlockNode & {
   type: "block-atom"
@@ -23,7 +23,7 @@ export type BlockTextList = BlockNode & {
 
 export type BlockText = BlockNode & {
   type: "block-text"
-  content: (InlineText | InlineAtom)[]
+  content: InlineType[]
 }
 
 export type BlockNode = {

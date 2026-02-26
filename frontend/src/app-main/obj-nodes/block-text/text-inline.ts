@@ -4,22 +4,34 @@ import { MarkType } from "./mark-inline"
 
 
 export interface InlineType {
-  type: "text" | "atom",
   [key: string]: any,
-
+  length(): number
 }
 
-export type InlineText = InlineType & {
-  type: "text",
-  text: string,
+export class InlineText implements InlineType {
+  text: string;
   mark: MarkType;
+  constructor(text: string, mark: MarkType) {
+    this.text = text;
+    this.mark = mark;
+  }
+
+  length() {
+    return this.text.length;
+  }
 }
 
-export type InlineAtom = InlineType & {
-  type: "atom",
-  name: string,
+export class InlineAtom implements InlineType {
+  name: string;
   attrs: Record<string, any>;
+  constructor(name: string, attrs: Record<string, any>) {
+    this.name = name;
+    this.attrs = attrs;
+  }
 
+  length() {
+    return 1;
+  }
 }
 
 
