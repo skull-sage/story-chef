@@ -39,7 +39,12 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
     if (childList[idx].contains(startContainer)) {
         start = { inlineIdx: idx, prefixLen:prefixLen, offset: startOffset };
         from = prefixLen + startOffset;
-        break
+
+    }
+    if (childList[idx].contains(endContainer)) {
+      end = { inlineIdx: idx, prefixLen: prefixLen, offset: endOffset };
+      to = prefixLen + endOffset;
+      break;
     }
     if('text' in blockContent[idx]) {
       prefixLen += (blockContent[idx] as InlineText).text.length;
@@ -48,35 +53,18 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
     }
   }
 
-  for (let idx = start.inlineIdx; idx < childList.length; idx++) {
-    if (childList[idx].contains(endContainer)) {
-      end = { inlineIdx: idx, prefixLen: prefixLen, offset: endOffset };
-      to = prefixLen + endOffset;
-      break;
-    }
-    prefixLen += blockContent[idx].length();
-  }
-
-
   // checking locality: both start and end of selection should be bounded by the text block
   if (start == undefined || end == undefined)
     return null;
 
-  if (start && end && start.inlineIdx == end.inlineIdx) {
-    if ('text' in blockContent[start.inlineIdx])
+  if (start.inlineIdx == end.inlineIdx && 'text' in blockContent[start.inlineIdx]) {
       mark = (blockContent[start.inlineIdx] as InlineText).mark;
-    else mark = undefined;
-  }
+  }else mark = undefined;
 
   let selection: TextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
   return selection;
 }
 
-const evalContainer(item: InlineType, node: Node):  => {
-  if (node instanceof HTMLElement) return node;
-  else if (node.parentElement) return evalContainer(node.parentElement);
-  else return null;
-}
 
 const calcFocusPos = (sel: Selection) => {
   let focusXY = null;

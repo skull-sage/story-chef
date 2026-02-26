@@ -40,16 +40,16 @@ export class FlatContent  {
        if(typeof this.valArr[i] === 'number') {
         if(this.markArr[i] !== currMark) {
           if(currText){
-              result += `{${currText},${currMark}}`;
+              result += `{${currText},${currMark?.type}}`;
           }
-          currText = "";
+          currText = String.fromCharCode(this.valArr[i] as number);
           currMark = this.markArr[i];
         } else {
           currText += String.fromCharCode(this.valArr[i] as number);
         }
       } else {
         if(currText) {
-          result += `{${currText},${currMark}}`;
+          result += `{${currText},${currMark?.type}}`;
           currText = "";
         }
         result += "(atom)";
@@ -58,15 +58,15 @@ export class FlatContent  {
       }
 
     }
-    console.log("sel-val:", currText, "mark:", currMark);
-  }
 
-
-  applyMark(from: number, to: number, mark: MarkType): InlineType[] {
-    for (let idx = from; idx < to; idx++) {
-         this.markArr[idx] = mark;
+    if(currText) {
+      result += `{${currText},${currMark?.type}}`;
     }
 
+    console.log("#sel", result);
+  }
+
+  collapse(): InlineType[] {
     const newContent: InlineType[] = [];
     let currentMark: MarkType | undefined = this.markArr[0];
     let sliceStart, sliceEnd: number;
@@ -74,12 +74,8 @@ export class FlatContent  {
 
     for (let idx = 0; idx < this.valArr.length; idx++) {
 
-      if(idx >= from && idx < to){
-        this.markArr[idx] = mark;
-      }
-
       if(typeof this.valArr[idx] === 'number') {
-          if (this.markArr[idx] !== currentMark) {
+          if (!isMarkEqual(this.markArr[idx], currentMark)) {
             if (currentText) {
               newContent.push({ text: currentText, mark: currentMark } as InlineText);
             }
@@ -105,6 +101,21 @@ export class FlatContent  {
     }
 
     return newContent;
+  }
+
+  applyMark(from: number, to: number, mark: MarkType): InlineType[] {
+    for (let idx = from; idx < to; idx++) {
+         this.markArr[idx] = mark;
+    }
+    return this.collapse();
+
+  }
+
+  replaceText(from: number, to: number, newText: string): InlineType[] {
+
+    this.valArr.splice(from, to - from, ...[...newText].map(ch => ch.charCodeAt(0)));
+    this.markArr.splice(from, to - from, ...new Array(newText.length).fill(undefined));
+    return this.collapse();
 
   }
 }
@@ -113,7 +124,13 @@ export class FlatContent  {
 
 export default {
   replaceText(node: BlockText, text: string, selection: TextSelection) {
-
+    const { from, to } = selection;
+    const flatContent = FlatContent.expand(node.content);
+    const newContent = flatContent.replaceText(from, to, text);
+    node.content = newContent;
+    console.log("New Content:", node.content);
+    //if (!node.renderKey) node.renderKey = 0;
+    //node.renderKey++;
   },
 
   insertAtom(node: BlockText, atom: InlineAtom, selection: TextSelection) {
@@ -124,13 +141,14 @@ export default {
     const { from, to } = selection;
     const flatContent = FlatContent.expand(node.content);
     flatContent.log(from, to);
-    if(selection.mark!== undefined){
-      console.log("Current mark in selection:", selection.mark);
+    if(selection.mark && isMarkEqual(selection.mark, mark)) {
+      mark = undefined;
     }
     const newContent = flatContent.applyMark(from, to, mark);
     node.content = newContent;
-    if (!node.renderKey) node.renderKey = 0;
-    node.renderKey++;
+    console.log("New Content:", node.content);
+    //if (!node.renderKey) node.renderKey = 0;
+    //node.renderKey++;
   }
 
   // toggleMark(node: BlockText, mark: MarkType, selection: TextSelection): boolean {
