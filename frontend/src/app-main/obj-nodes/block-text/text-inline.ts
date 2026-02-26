@@ -8,31 +8,17 @@ export interface InlineType {
   length(): number
 }
 
-export class InlineText implements InlineType {
+export type InlineText = InlineType & {
   text: string;
   mark: MarkType;
-  constructor(text: string, mark: MarkType) {
-    this.text = text;
-    this.mark = mark;
-  }
-
-  length() {
-    return this.text.length;
-  }
 }
 
-export class InlineAtom implements InlineType {
+export type InlineAtom = InlineType & {
   name: string;
   attrs: Record<string, any>;
-  constructor(name: string, attrs: Record<string, any>) {
-    this.name = name;
-    this.attrs = attrs;
-  }
-
-  length() {
-    return 1;
-  }
 }
+
+
 
 
 

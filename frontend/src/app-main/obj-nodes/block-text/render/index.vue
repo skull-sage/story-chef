@@ -8,14 +8,15 @@
     @mouseup="onMouseup"
   >
     <template v-for="(item, idx) in node.content" :key="idx">
-       <span
-        v-if="item instanceof InlineAtom"
+      <NodeText v-if="'text' in item" :node="item as InlineText" />
+      <span
+        v-else
         contenteditable="false"
         class="atom-element"
       >
         {{ (item as InlineAtom).name }}
       </span>
-      <NodeText v-else :node="item as InlineText" />
+
 
     </template>
   </div>
@@ -26,7 +27,7 @@ import { isReactive, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { BlockText } from '../block-type';
 import { type TextSelection, calcTextLocalSelection } from '../text-selection';
 import NodeText from './node-text.vue';
-import CmdsText from '../cmds-basic';
+import CmdsText, { FlatContent } from '../cmds-basic';
 import { markForKey } from '../keybindings';
 import { InlineAtom, InlineText } from '../text-inline';
 
@@ -49,7 +50,8 @@ const updateSelection = () => {
 };
 
 const onMouseup = () => {
-  console.log('selection:', selectionState);
+  console.log('#selection on mouse-up:', selectionState);
+   FlatContent.expand(props.node.content).log(selectionState.from, selectionState.to);
 };
 
 const onKeydown = (e: KeyboardEvent) => {

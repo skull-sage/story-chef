@@ -1,11 +1,8 @@
 
 import { text } from "animejs";
-import { InlineText, InlineType } from "./text-inline";
+import { InlineAtom, InlineText, InlineType } from "./text-inline";
 import { MarkType } from "./mark-inline";
 import { FlatContent } from "./cmds-basic";
-
-6710
-
 
 // Helper type for selection state
 export interface TextSelection {
@@ -34,25 +31,30 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
   let start //: HTMLElement = findContainerInline(startContainer);
   let end//: HTMLElement = findContainerInline(endContainer);
   let mark: MarkType;
-  let from, prefixCount, to = 0;
+  let from = 0, prefixLen = 0, to = 0;
 
 
-  for (let idx = 0; idx < childList.length; idx++) {
+  // block elm child list should be equal to blockContent except tail cursor elm
+  for (let idx = 0; idx < blockContent.length; idx++) {
     if (childList[idx].contains(startContainer)) {
-        start = { inlineIdx: idx, prefixLen:prefixCount, offset: startOffset };
-        from = prefixCount + startOffset;
+        start = { inlineIdx: idx, prefixLen:prefixLen, offset: startOffset };
+        from = prefixLen + startOffset;
         break
     }
-    prefixCount += blockContent[idx].length();
+    if('text' in blockContent[idx]) {
+      prefixLen += (blockContent[idx] as InlineText).text.length;
+    } else {
+      prefixLen += 1; // atom length is 1
+    }
   }
 
   for (let idx = start.inlineIdx; idx < childList.length; idx++) {
     if (childList[idx].contains(endContainer)) {
-      end = { inlineIdx: idx, prefixLen: prefixCount, offset: endOffset };
-      to = prefixCount + endOffset;
+      end = { inlineIdx: idx, prefixLen: prefixLen, offset: endOffset };
+      to = prefixLen + endOffset;
       break;
     }
-    prefixCount += blockContent[idx].length();
+    prefixLen += blockContent[idx].length();
   }
 
 
@@ -61,16 +63,19 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
     return null;
 
   if (start && end && start.inlineIdx == end.inlineIdx) {
-    if (blockContent[start.inlineIdx].isText())
+    if ('text' in blockContent[start.inlineIdx])
       mark = (blockContent[start.inlineIdx] as InlineText).mark;
     else mark = undefined;
   }
 
   let selection: TextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
-
-  FlatContent.expand(blockContent).log(selection.from, selection.to);
-
   return selection;
+}
+
+const evalContainer(item: InlineType, node: Node):  => {
+  if (node instanceof HTMLElement) return node;
+  else if (node.parentElement) return evalContainer(node.parentElement);
+  else return null;
 }
 
 const calcFocusPos = (sel: Selection) => {

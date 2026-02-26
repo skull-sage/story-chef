@@ -18,7 +18,7 @@ export class FlatContent  {
     const flat = new FlatContent([], []);
     for (let idx = 0; idx < content.length; idx++) {
       let item = content[idx];
-      if (item.isText()) {
+      if ('text' in item) {
         for (let i = 0; i < item.text.length; i++) {
           flat.valArr.push(item.text.charCodeAt(i));
           flat.markArr.push(item.mark);
@@ -32,24 +32,33 @@ export class FlatContent  {
   }
 
   log(from: number, to: number) {
-    console.log("FlatContent log from:", from, "to:", to);
-    let currText = "";
+    console.log("Flat Raneg:", from, "to:", to);
+    let currText = "", result ="";
     let currMark:MarkType = this.markArr[from];
 
     for (let i = from; i < to && i < this.valArr.length; i++) {
-      if (this.markArr[i] !== currMark) {
-        console.log( "{", currText, ",", currMark, "}" );
-        currText = "";
-        currMark = this.markArr[i];
-      }
-      if (this.valArr[i] instanceof InlineAtom) {
-        currText += "(atom)";
-        currMark = undefined;
+       if(typeof this.valArr[i] === 'number') {
+        if(this.markArr[i] !== currMark) {
+          if(currText){
+              result += `{${currText},${currMark}}`;
+          }
+          currText = "";
+          currMark = this.markArr[i];
+        } else {
+          currText += String.fromCharCode(this.valArr[i] as number);
+        }
       } else {
-        currText += String.fromCharCode(this.valArr[i] as number);
+        if(currText) {
+          result += `{${currText},${currMark}}`;
+          currText = "";
+        }
+        result += "(atom)";
+        currText = "";
+        currMark = undefined;
       }
+
     }
-    console.log("idx:", to, "val:", currText, "mark:", currMark);
+    console.log("sel-val:", currText, "mark:", currMark);
   }
 
 
@@ -69,28 +78,30 @@ export class FlatContent  {
         this.markArr[idx] = mark;
       }
 
-      if(this.valArr[idx] instanceof InlineAtom){
+      if(typeof this.valArr[idx] === 'number') {
+          if (this.markArr[idx] !== currentMark) {
+            if (currentText) {
+              newContent.push({ text: currentText, mark: currentMark } as InlineText);
+            }
+            currentMark = this.markArr[idx];
+            currentText = String.fromCharCode(this.valArr[idx] as number);
+          } else {
+            currentText += String.fromCharCode(this.valArr[idx] as number);
+          }
+      } else { // atom
         if (currentText) {
-          newContent.push(new InlineText(currentText, currentMark));
+          newContent.push({ text: currentText, mark: currentMark } as InlineText);
           currentText = "";
           currentMark = undefined;
         }
         newContent.push(this.valArr[idx] as InlineAtom);
 
-      } else if(this.markArr[idx] !== currentMark) {
-          if (currentText) {
-            newContent.push(new InlineText(currentText, currentMark));
-          }
-          currentMark = this.markArr[idx];
-          currentText = String.fromCharCode(this.valArr[idx] as number);
-      } else {
-          currentText += String.fromCharCode(this.valArr[idx] as number);
       }
 
     }
 
     if (currentText) {
-      newContent.push(new InlineText(currentText, currentMark));
+      newContent.push({ text: currentText, mark: currentMark } as InlineText);
     }
 
     return newContent;
