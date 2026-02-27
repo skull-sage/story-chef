@@ -1,11 +1,11 @@
-import { InlineText, InlineAtom, InlineType } from "./text-inline"
-import type { BlockText } from "./block-type"
+import { InlineText, InlineAtom, InlineType, isMarkEqual, MarkType } from "./text-types"
+import { BlockText } from "./text-types"
 import { TextSelection } from "./text-selection"
-import { isMarkEqual, MarkType } from "./mark-inline";
-import { debug } from "console";
 
 
-export class FlatContent  {
+
+
+export class FlatContent {
   valArr: (number | InlineAtom)[] = [];
   markArr: (MarkType | undefined)[] = [];
 
@@ -33,14 +33,14 @@ export class FlatContent  {
 
   log(from: number, to: number) {
     console.log("Flat Raneg:", from, "to:", to);
-    let currText = "", result ="";
-    let currMark:MarkType = this.markArr[from];
+    let currText = "", result = "";
+    let currMark: MarkType = this.markArr[from];
 
     for (let i = from; i < to && i < this.valArr.length; i++) {
-       if(typeof this.valArr[i] === 'number') {
-        if(this.markArr[i] !== currMark) {
-          if(currText){
-              result += `{${currText},${currMark?.type}}`;
+      if (typeof this.valArr[i] === 'number') {
+        if (this.markArr[i] !== currMark) {
+          if (currText) {
+            result += `{${currText},${currMark?.type}}`;
           }
           currText = String.fromCharCode(this.valArr[i] as number);
           currMark = this.markArr[i];
@@ -48,7 +48,7 @@ export class FlatContent  {
           currText += String.fromCharCode(this.valArr[i] as number);
         }
       } else {
-        if(currText) {
+        if (currText) {
           result += `{${currText},${currMark?.type}}`;
           currText = "";
         }
@@ -59,7 +59,7 @@ export class FlatContent  {
 
     }
 
-    if(currText) {
+    if (currText) {
       result += `{${currText},${currMark?.type}}`;
     }
 
@@ -74,16 +74,16 @@ export class FlatContent  {
 
     for (let idx = 0; idx < this.valArr.length; idx++) {
 
-      if(typeof this.valArr[idx] === 'number') {
-          if (!isMarkEqual(this.markArr[idx], currentMark)) {
-            if (currentText) {
-              newContent.push({ text: currentText, mark: currentMark } as InlineText);
-            }
-            currentMark = this.markArr[idx];
-            currentText = String.fromCharCode(this.valArr[idx] as number);
-          } else {
-            currentText += String.fromCharCode(this.valArr[idx] as number);
+      if (typeof this.valArr[idx] === 'number') {
+        if (!isMarkEqual(this.markArr[idx], currentMark)) {
+          if (currentText) {
+            newContent.push({ text: currentText, mark: currentMark } as InlineText);
           }
+          currentMark = this.markArr[idx];
+          currentText = String.fromCharCode(this.valArr[idx] as number);
+        } else {
+          currentText += String.fromCharCode(this.valArr[idx] as number);
+        }
       } else { // atom
         if (currentText) {
           newContent.push({ text: currentText, mark: currentMark } as InlineText);
@@ -105,7 +105,7 @@ export class FlatContent  {
 
   applyMark(from: number, to: number, mark: MarkType): InlineType[] {
     for (let idx = from; idx < to; idx++) {
-         this.markArr[idx] = mark;
+      this.markArr[idx] = mark;
     }
     return this.collapse();
 
@@ -141,7 +141,7 @@ export default {
     const { from, to } = selection;
     const flatContent = FlatContent.expand(node.content);
     flatContent.log(from, to);
-    if(selection.mark && isMarkEqual(selection.mark, mark)) {
+    if (selection.mark && isMarkEqual(selection.mark, mark)) {
       mark = undefined;
     }
     const newContent = flatContent.applyMark(from, to, mark);

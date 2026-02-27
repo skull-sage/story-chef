@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { unescape } from 'querystring';
-import type { InlineText } from '../text-inline';
+import type { InlineText } from '../text-types';
 
 defineProps<{ node: InlineText }>();
 </script>

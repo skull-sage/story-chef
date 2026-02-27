@@ -1,4 +1,4 @@
-import { InlineAtom, InlineText, InlineType } from "./text-inline"
+
 
 export type BlockAtom = BlockNode & {
   type: "block-atom"
@@ -8,29 +8,20 @@ export type BlockAtom = BlockNode & {
   attrs: object
 }
 
-export type BlockTextList = BlockNode & {
-  type: "block-list"
-  style: string
-  content: BlockText[]
-}
 
-// export type BlockTable = BlockNode & {
-//   type: "block-table"
-//   header: BlockText[]
-//   rows: BlockText[]
-// }
-
-
-export type BlockText = BlockNode & {
-  type: "block-text"
-  content: InlineType[]
-}
 
 export type BlockNode = {
   renderKey: number
   type: string
-  prev: number
-  next: number
-  parent: number
-  id: number
+  prev?: number
+  next?: number
+  parent?: number
+  id: number | string
+}
+
+
+export const BlockRoot: BlockNode = {
+  renderKey: 0,
+  type: "doc-root",
+  id: "root",
 }

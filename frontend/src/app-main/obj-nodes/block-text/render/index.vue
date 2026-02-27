@@ -23,14 +23,11 @@
 </template>
 
 <script setup lang="ts">
-import { isReactive, onBeforeUnmount, onMounted, ref } from 'vue';
-import type { BlockText } from '../block-type';
-import { type TextSelection, calcTextLocalSelection } from '../text-selection';
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+import type { BlockText } from '../text-types';
 import NodeText from './node-text.vue';
-import CmdsText, { FlatContent } from '../cmds-basic';
-import { markForKey } from '../keybindings';
-import { InlineAtom, InlineText } from '../text-inline';
-
+import { InlineAtom, InlineText } from '../text-types';
+import { useBlockTextEvents } from './use-block-text-events';
 
 // Props receive shallowReactive data from parent
 const props = defineProps<{
@@ -38,42 +35,19 @@ const props = defineProps<{
 }>();
 
 const rootRef = ref<HTMLElement | null>(null);
-let selectionState:TextSelection = undefined;
 
-const updateSelection = () => {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) {
-    selectionState = undefined;
-    return;
-  }
-  selectionState = calcTextLocalSelection(sel, rootRef.value.children, props.node.content);
-};
-
-const onMouseup = () => {
-  console.log('#selection on mouse-up:', selectionState);
-   FlatContent.expand(props.node.content).log(selectionState.from, selectionState.to);
-};
-
-const onKeydown = (e: KeyboardEvent) => {
-  const mark = markForKey(e);
-  if (!mark) return;
-  e.preventDefault();
-  console.log(e, mark)
-  const sel = selectionState;
-  if (!sel) return;
-  CmdsText.applyMark(props.node, mark, sel);
-
-
-};
+const { onSelectionChange, onMouseup, onKeydown } = useBlockTextEvents(
+  () => props.node,
+  rootRef,
+);
 
 onMounted(() => {
-  document.addEventListener('selectionchange', updateSelection);
+  document.addEventListener('selectionchange', onSelectionChange);
 });
 
 onBeforeUnmount(() => {
-  document.removeEventListener('selectionchange', updateSelection);
+  document.removeEventListener('selectionchange', onSelectionChange);
 });
-
 
 </script>
 

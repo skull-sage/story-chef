@@ -1,4 +1,4 @@
-import type { MarkType } from './mark-inline';
+import type { MarkType } from './text-types';
 
 /**
  * Maps a Ctrl+<key> combination to the mark it should toggle.

@@ -5,8 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import type { InlineText } from '../text-inline';
-import type { MarkFormat } from '../mark-inline';
+import type { InlineText } from '../text-types';
+import type { MarkFormat } from '../text-types';
 
 const props = defineProps<{
   node: InlineText & { mark: MarkFormat }

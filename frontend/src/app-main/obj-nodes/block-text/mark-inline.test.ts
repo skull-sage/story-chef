@@ -5,7 +5,7 @@ import {
   MarkFormat,
   MarkHighlight,
   MarkLink,
-} from './mark-inline'
+} from './text-types'
 
 // ---------------------------------------------------------------------------
 // Helpers to reset MarkPool's private static state between tests so that

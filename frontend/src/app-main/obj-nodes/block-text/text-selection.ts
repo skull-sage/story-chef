@@ -1,13 +1,12 @@
 
-import { text } from "animejs";
-import { InlineAtom, InlineText, InlineType } from "./text-inline";
-import { MarkType } from "./mark-inline";
+import { InlineText, InlineType, MarkType } from "./text-types";
 import { FlatContent } from "./cmds-basic";
+
 
 // Helper type for selection state
 export interface TextSelection {
-  start: { inlineIdx: number, prefixLen:number, offset: number };
-  end: { inlineIdx: number, prefixLen:number, offset: number };
+  start: { inlineIdx: number, prefixLen: number, offset: number };
+  end: { inlineIdx: number, prefixLen: number, offset: number };
   from: number;
   to: number;
   focusXY?: { x: number; y: number } | null;
@@ -17,7 +16,7 @@ export interface TextSelection {
 
 // calc text selection so that the selection is bounded by a single text block
 
-export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection, blockContent: InlineType[]) :TextSelection {
+export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection, blockContent: InlineType[]): TextSelection {
 
   if (sel.rangeCount === 0) {
     return null;
@@ -37,8 +36,8 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
   // block elm child list should be equal to blockContent except tail cursor elm
   for (let idx = 0; idx < blockContent.length; idx++) {
     if (childList[idx].contains(startContainer)) {
-        start = { inlineIdx: idx, prefixLen:prefixLen, offset: startOffset };
-        from = prefixLen + startOffset;
+      start = { inlineIdx: idx, prefixLen: prefixLen, offset: startOffset };
+      from = prefixLen + startOffset;
 
     }
     if (childList[idx].contains(endContainer)) {
@@ -46,7 +45,7 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
       to = prefixLen + endOffset;
       break;
     }
-    if('text' in blockContent[idx]) {
+    if ('text' in blockContent[idx]) {
       prefixLen += (blockContent[idx] as InlineText).text.length;
     } else {
       prefixLen += 1; // atom length is 1
@@ -58,8 +57,8 @@ export function calcTextLocalSelection(sel: Selection, childList: HTMLCollection
     return null;
 
   if (start.inlineIdx == end.inlineIdx && 'text' in blockContent[start.inlineIdx]) {
-      mark = (blockContent[start.inlineIdx] as InlineText).mark;
-  }else mark = undefined;
+    mark = (blockContent[start.inlineIdx] as InlineText).mark;
+  } else mark = undefined;
 
   let selection: TextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
   return selection;

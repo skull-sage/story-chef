@@ -3,8 +3,8 @@
 </template>
 
 <script setup lang="ts">
-import type { InlineText } from '../text-inline';
-import type { MarkHighlight } from '../mark-inline';
+import type { InlineText } from '../text-types';
+import type { MarkHighlight } from '../text-types';
 
 const props = defineProps<{
   node: InlineText & { mark: MarkHighlight }
