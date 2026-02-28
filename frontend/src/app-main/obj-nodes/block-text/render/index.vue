@@ -1,6 +1,5 @@
 <template>
   <div
-  :key="node.renderKey"
     ref="rootRef"
     class="editable-content"
     contenteditable="true"
@@ -22,31 +21,110 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import type { BlockText } from '../text-types';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import type { PropType } from 'vue';
+import type { BlockText, InlineAtom, InlineText, InlineType } from '../text-types';
 import NodeText from './node-text.vue';
-import { InlineAtom, InlineText } from '../text-types';
-import { useBlockTextEvents } from './use-block-text-events';
+import { calcTextLocalSelection, type TextSelection } from '../text-selection';
+import CmdsText, { FlatContent } from '../cmds-basic';
+import { markForKey } from '../keybindings';
 
-// Props receive shallowReactive data from parent
-const props = defineProps<{
-  node: BlockText;
-}>();
 
-const rootRef = ref<HTMLElement | null>(null);
+export default defineComponent({
+  name: 'BlockTextRender',
+  components: { NodeText },
+  props: {
+    node: { type: Object as PropType<BlockText>, required: true },
+  },
+  data() {
+    return {
+      selectionState: undefined as TextSelection | undefined,
+    };
+  },
+  methods: {
+    onSelectionChange() {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) {
+        this.selectionState = undefined;
+        return;
+      }
+      const root = this.$refs.rootRef as HTMLElement | null;
+      this.selectionState = calcTextLocalSelection(sel, root, this.node);
+    },
+    onMouseup() {
+      console.log('#selection on mouse-up:', this.selectionState);
+      if (this.selectionState) {
+        FlatContent.expand(this.node.content).log(this.selectionState.from, this.selectionState.to);
+      }
+    },
+    onKeydown(e: KeyboardEvent) {
+      // Ctrl+V — paste clipboard as plain text
+      if (e.ctrlKey && e.key === 'v') {
+        e.preventDefault();
+        const sel = this.selectionState;
+        if (!sel) return;
+        navigator.clipboard.readText().then((raw) => {
+          if (!raw) return;
+          CmdsText.replaceText(this.node, sel, raw);
+        });
+        return;
+      }
 
-const { onSelectionChange, onMouseup, onKeydown } = useBlockTextEvents(
-  () => props.node,
-  rootRef,
-);
+      // Mark shortcuts (bold, italic, etc.)
+      const mark = markForKey(e);
+      if (mark) {
+        e.preventDefault();
+        console.log(e, mark);
+        const sel = this.selectionState;
+        if (!sel) return;
+        CmdsText.applyMark(this.node, mark, sel);
+        return;
+      }
 
-onMounted(() => {
-  document.addEventListener('selectionchange', onSelectionChange);
-});
+      // Backspace — delete selection or char before cursor
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        const sel = this.selectionState;
+        if (!sel) return;
+        if (sel.from === sel.to) {
+          if (sel.from === 0) return;
+          CmdsText.replaceText(this.node, { ...sel, from: sel.from - 1 }, '');
+        } else {
+          CmdsText.replaceText(this.node, sel, '');
+        }
+        return;
+      }
 
-onBeforeUnmount(() => {
-  document.removeEventListener('selectionchange', onSelectionChange);
+      // Delete — delete selection or char after cursor
+      if (e.key === 'Delete') {
+        e.preventDefault();
+        const sel = this.selectionState;
+        if (!sel) return;
+        if (sel.from === sel.to) {
+          CmdsText.replaceText(this.node, '', { ...sel, to: sel.to + 1 });
+        } else {
+          CmdsText.replaceText(this.node, '', sel);
+        }
+        return;
+      }
+
+      // Printable character — insert/overwrite at selection
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const sel = this.selectionState;
+        if (!sel) return;
+        CmdsText.replaceText(this.node, e.key, sel);
+        return;
+      }
+    },
+  },
+  mounted() {
+    document.addEventListener('selectionchange', this.onSelectionChange);
+  },
+  beforeUnmount() {
+    document.removeEventListener('selectionchange', this.onSelectionChange);
+  },
 });
 
 </script>

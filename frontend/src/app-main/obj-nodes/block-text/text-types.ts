@@ -1,6 +1,3 @@
-import { BlockNode } from "./block-type";
-
-
 
 export interface MarkType {
   type: string
@@ -44,56 +41,53 @@ export type MarkHighlight = MarkType & {
 
 
 
-export interface InlineType {
-  [key: string]: any,
-}
+export type InlineType = InlineText | InlineAtom;
 
-export type InlineText = InlineType & {
+export type InlineText = {
   text: string;
   mark: MarkType;
 }
 
-export type InlineAtom = InlineType & {
+export type InlineAtom =  {
   name: string;
   attrs: Record<string, any>;
 }
 
-
-export class BlockText implements BlockNode {
-  id: number | string;
-  renderKey: number = 0;
-  type: string = "block-text";
-  prev?: number;
-  next?: number;
-  parent?: number;
+export type BlockText = {
+  id: string|number;
   content: InlineType[]
+}
 
+export const $BlockText = {
+  sanitize(node : BlockText) : BlockText{
 
-  static simple(content: InlineType[]): BlockText {
-    const block = new BlockText();
+    if(node== undefined)
+      return {id:undefined, content:[]}
 
-    let itemList: InlineType[] = [];
-    for (let idx = 0; idx < content.length; idx++) {
-      if (content[idx].text) {
-        itemList.push(content[idx]);
-      } else if (content[idx].name && content[idx].attrs) {
-        itemList.push(content[idx]);
-      } else {
-        console.warn(`item ${idx} of Block Text is not an InlineText or InlineAtom.`);
-      }
+    const newContent = [];
+    for (let idx = 0; idx < node.content.length; idx++) {
+      let item:InlineType = node.content[idx];
+      if ($BlockText.isTextItem(item)) {
+          newContent.push(item);
+        } else if ('name' in item) {
+          newContent.push(item);
+        } else {
+          console.warn(`item ${idx} of Block Text is not an InlineText or InlineAtom.`);
+        }
     }
-    block.content = itemList;
-    return block;
-  }
+    node.content = newContent;
+    return node;
+  },
 
-  isText(inlineIdx: number): boolean {
-    return "text" in this.content[inlineIdx];
-  }
+  isTextItem(item:InlineType){
+    return 'text' in item
+  },
 
-  itemLen(inlineIdx: number): number {
-    if (!this.isText(inlineIdx)) return 0;
-    return this.content[inlineIdx].text.length;
+  itemLength(item:InlineType){
+    if ($BlockText.isTextItem(item)) {
+      return item.text?.length || 0;
+    }
+    return 1; // atom length is 1
   }
-
 
 }
