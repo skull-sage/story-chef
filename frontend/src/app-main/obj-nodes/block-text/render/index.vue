@@ -78,7 +78,7 @@ export default defineComponent({
         console.log(e, mark);
         const sel = this.selectionState;
         if (!sel) return;
-        CmdsText.applyMark(this.node, mark, sel);
+        CmdsText.applyMark(this.node, sel, mark);
         return;
       }
 
@@ -102,9 +102,9 @@ export default defineComponent({
         const sel = this.selectionState;
         if (!sel) return;
         if (sel.from === sel.to) {
-          CmdsText.replaceText(this.node, '', { ...sel, to: sel.to + 1 });
+          CmdsText.replaceText(this.node, { ...sel, to: sel.to + 1 }, '');
         } else {
-          CmdsText.replaceText(this.node, '', sel);
+          CmdsText.replaceText(this.node, sel, '');
         }
         return;
       }
@@ -114,7 +114,7 @@ export default defineComponent({
         e.preventDefault();
         const sel = this.selectionState;
         if (!sel) return;
-        CmdsText.replaceText(this.node, e.key, sel);
+        CmdsText.replaceText(this.node, sel, e.key);
         return;
       }
     },

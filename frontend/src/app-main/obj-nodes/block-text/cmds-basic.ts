@@ -133,7 +133,7 @@ export default {
     //node.renderKey++;
   },
 
-  insertAtom(node: BlockText, atom: InlineAtom, selection: TextSelection) {
+  insertAtom(node: BlockText, selection: TextSelection, atom: InlineAtom) {
 
   },
 
