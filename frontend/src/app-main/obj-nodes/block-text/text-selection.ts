@@ -7,14 +7,18 @@ export type InlineSelection = {
   inlineIdx: number, prefixLen: number, offset: number
 }
 
+export type FlatSelection = {
+  from: number,
+  to: number,
+  mark: MarkType,
+}
+
 // Helper type for selection state
 export interface TextSelection {
   start: InlineSelection;
   end: InlineSelection;
-  from: number;
-  to: number;
+  flat: FlatSelection;
   focusXY?: { x: number; y: number } | null;
-  mark?: MarkType;
 }
 
 

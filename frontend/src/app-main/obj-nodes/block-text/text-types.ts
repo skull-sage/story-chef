@@ -58,6 +58,7 @@ export type BlockText = {
   content: InlineType[]
 }
 
+
 export const $BlockText = {
   sanitize(node : BlockText) : BlockText{
 
@@ -91,3 +92,14 @@ export const $BlockText = {
   }
 
 }
+
+
+export const COMMON_MARK = {
+  bold: { type: 'format', format: 'bold' },
+  italic: { type: 'format', format: 'italic' },
+  code: { type: 'format', format: 'code' },
+  highlight: { type: 'highlight', styleClz: 'bg-line', color: '#ffe066' },
+  underline: { type: 'highlight', styleClz: 'uline', color: '#ffe066' },
+}
+
+

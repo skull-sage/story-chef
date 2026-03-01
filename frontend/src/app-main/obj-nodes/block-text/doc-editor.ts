@@ -1,31 +1,28 @@
+import { FlatSelection, TextSelection } from "./text-selection";
+import { InlineType } from "./text-types";
 
-type Command = (node: any, selection: any) => any;
+type Command = (content: InlineType[], selection: any) => any;
+type SelectionChangeListener = (selection: TextSelection) => void;
 
 
-export class DocEditor{
-  node: any;
-  selection : any;
-  execute(Command: Command){
-    let node = DocEditor.clone(this.node);
-    let selection = DocEditor.clone(this.selection);
-    Command(node, selection);
+export class TextDoc{
+  textContent: InlineType[];
+  flatSelection : FlatSelection;
 
+  selChangeListeners: (() => void)[] = [];
+
+  applyChange(content:InlineType[], selection:FlatSelection){
+    this.textContent = content;
+    this.flatSelection = selection;
+    this.notifySelectionChange();
   }
 
-  static clone(obj: any) {
-    if (obj === null || typeof obj !== 'object') {
-      return obj;
-    }
+  onSelectionChange(listener: () => void){
+    this.selChangeListeners.push(listener);
+  }
 
-    if (obj instanceof Date) {
-      return new Date(obj.getTime());
-    }
+  notifySelectionChange(){
+    this.selChangeListeners.forEach(listener => listener());
+  }
 
-    if (obj instanceof Array) {
-      const arrCopy: any[] = [];
-      for (let i = 0; i < obj.length; i++) {
-        arrCopy[i] = this.clone(obj[i]);
-      }
-      return arrCopy;
-    }
 }
