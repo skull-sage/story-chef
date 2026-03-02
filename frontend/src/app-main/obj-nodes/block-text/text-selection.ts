@@ -1,30 +1,34 @@
 
 import { $BlockText, BlockText, InlineText, InlineType, MarkType } from "./text-types";
-import { FlatContent } from "./cmds-basic";
 
 
-export type InlineSelection = {
-  inlineIdx: number, prefixLen: number, offset: number
-}
 
-export type FlatSelection = {
-  from: number,
-  to: number,
+export type BlockRangeSelection = {
+  start: {blockId: number|string, from:number},
+  end: {blockId: number|string, to:number},
   mark: MarkType,
 }
+ 
 
 // Helper type for selection state
-export interface TextSelection {
-  start: InlineSelection;
-  end: InlineSelection;
-  flat: FlatSelection;
+export interface BlockTextSelection {
+  //start: InlineSelection; // kept for future reference
+  //end: InlineSelection;
+  from: number;
+  to: number;
+  start: {inlineIdx:number, offset:number}
+  end: {inlineIdx:number, offset:number}
+  mark: MarkType;
   focusXY?: { x: number; y: number } | null;
 }
 
 
-// calc text selection so that the selection is bounded by a single text block
+//calculate block text local selection
+// NOTE: Content is (InlineText | Atom) [],
+// Runtime expanded Content is ({char, mark} | atom)[],
+// Char Len = 1, atom = 1, char are collapsed into InlineText by mark-equality
 
-export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: BlockText): TextSelection {
+export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: BlockText): BlockTextSelection {
 
   if (!sel || sel.rangeCount === 0) {
     return null;
@@ -32,23 +36,20 @@ export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: B
 
   let { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
 
-  let start:InlineSelection = undefined;
-  let end:InlineSelection = undefined
   let mark: MarkType;
   let from = 0, prefixLen = 0, to = 0;
-
   const domChildren = elm.children;
-
+  let start, end = undefined
 
   // block elm child list should be equal to blockContent except tail cursor elm
   for (let idx = 0; idx < node.content.length; idx++) {
     if (domChildren[idx].contains(startContainer)) {
-      start = { inlineIdx: idx, prefixLen: prefixLen, offset: startOffset };
+      start = {inlineIdx:idx, offset:startOffset};
       from = prefixLen + startOffset;
 
     }
     if (domChildren[idx].contains(endContainer)) {
-      end = { inlineIdx: idx, prefixLen: prefixLen, offset: endOffset };
+      end = {inlineIdx:idx, offset:endOffset};
       to = prefixLen + endOffset;
       break;
     }
@@ -69,7 +70,7 @@ export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: B
     }
   }
 
-  let selection: TextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
+  let selection: BlockTextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
   return selection;
 }
 

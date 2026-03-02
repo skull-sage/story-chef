@@ -1,13 +1,33 @@
-import { FlatSelection, TextSelection } from "./text-selection";
-import { InlineType } from "./text-types";
+import { BlockTextSelection } from "./text-selection";
+import { BlockText, InlineType } from "./text-types";
 
 type Command = (doc:DocText) => any;
-type SelectionChangeListener = (selection: FlatSelection) => void;
+type SelectionChangeListener = (selection: BlockTextSelection) => void;
 
+export class BlockTextPatch{
+
+  setAttr(attrs:Object){
+
+  }
+
+  setContent(content: InlineType[]){
+
+  }
+
+  setSelection(selection:BlockTextSelection){
+
+  }
+
+  apply(node:BlockText){
+
+  }
+}
 
 export class DocText{
-  textContent: InlineType[];
-  flatSelection : FlatSelection;
+   state: {
+    node:BlockText,
+    selection:BlockTextSelection
+   };
 
   onSelectionChange: SelectionChangeListener;
 
@@ -15,10 +35,8 @@ export class DocText{
 
   }
 
-  applyChange(content:InlineType[], selection:FlatSelection){
-    this.textContent = content;
-    this.flatSelection = selection;
-    this.onSelectionChange(this.flatSelection);
+  $path(patchFunc: (state)=>void){
+      patchFunc(this.state);
   }
 
   adjustDomSelection(){
