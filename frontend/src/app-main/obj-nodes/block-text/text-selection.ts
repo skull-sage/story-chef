@@ -11,7 +11,7 @@ export type BlockRangeSelection = {
  
 
 // Helper type for selection state
-export interface BlockTextSelection {
+export interface TextSelection {
   //start: InlineSelection; // kept for future reference
   //end: InlineSelection;
   from: number;
@@ -28,7 +28,7 @@ export interface BlockTextSelection {
 // Runtime expanded Content is ({char, mark} | atom)[],
 // Char Len = 1, atom = 1, char are collapsed into InlineText by mark-equality
 
-export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: BlockText): BlockTextSelection {
+export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: BlockText): BlockTextSelection | null {
 
   if (!sel || sel.rangeCount === 0) {
     return null;
@@ -70,7 +70,7 @@ export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: B
     }
   }
 
-  let selection: BlockTextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
+  let selection: TextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
   return selection;
 }
 

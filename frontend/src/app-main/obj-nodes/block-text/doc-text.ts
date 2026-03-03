@@ -1,46 +1,43 @@
-import { BlockTextSelection } from "./text-selection";
-import { BlockText, InlineType } from "./text-types";
+import { TextSelection } from "./text-selection";
+import { BlockText, InlineType, MarkType } from "./text-types";
 
-type Command = (doc:DocText) => any;
-type SelectionChangeListener = (selection: BlockTextSelection) => void;
+type Command = (node:BlockText, selection:TextSelection)=>void;
 
-export class BlockTextPatch{
+type CmdMap = {
+  cmdFunc: Command,
+  keyComb: string,
+  menuIcon: string,
+  menuLabel: string,
+}
 
-  setAttr(attrs:Object){
-
-  }
-
-  setContent(content: InlineType[]){
-
-  }
-
-  setSelection(selection:BlockTextSelection){
-
-  }
-
-  apply(node:BlockText){
-
+const mark_curry = (mark:MarkType)=>{
+  return (node:BlockText, selection:TextSelection)=>{
+    // apply mark to node
   }
 }
+
+export const CMD_MAP = {
+  bold :  mark_curry({type:'format', format:'bold'}),
+  italic : mark_curry({type:'format', format:'italic'}),
+  underline : mark_curry({type:'highlight', styleClz:'uline', color:'#ffe066'}),
+  highlight : mark_curry({type:'highlight', styleClz:'bg-line', color:'#ffe066'}),
+  code : mark_curry({type:'format', format:'code'}),
+}
+
+CMD_MAP.bold.apply();
 
 export class DocText{
-   state: {
-    node:BlockText,
-    selection:BlockTextSelection
-   };
+   node: BlockText ;  
+   selection?: TextSelection;
 
-  onSelectionChange: SelectionChangeListener;
-
-  onDomSelection(selection:Selection){
-
+   constructor(node: BlockText) {
+    this.node = node; 
   }
 
-  $path(patchFunc: (state)=>void){
-      patchFunc(this.state);
-  }
 
-  adjustDomSelection(){
-    // Adjust DOM selection based on flatSelection
-  }
+
+
 
 }
+
+
