@@ -17,12 +17,14 @@ export function markForKey(e: KeyboardEvent): MarkType | undefined {
     }
 }
 
-export  handleKeyMap(keymap: string, editor: any) {
-  switch (keymap) {
-    case 'ctrl+h': ()=>cmdsBasic.applyMark(editor, COMMON_MARK.hl_bgline),
-    case 'ctrl+u': return COMMON_MARK.uline;
-    case 'ctrl+b': return COMMON_MARK.bold;
-    case 'ctrl+i': return COMMON_MARK.italic;
-    default: return undefined;
-  }
+
+export const DEFAULTS_CMDS = {
+  bold :  cmdsBasic.makeApplyMark(COMMON_MARK.bold),
+  italic : cmdsBasic.makeApplyMark(COMMON_MARK.italic),
+  underline : cmdsBasic.makeApplyMark(COMMON_MARK.hl_uline),
+  highlight : cmdsBasic.makeApplyMark(COMMON_MARK.hl_bgline),
+  code : cmdsBasic.makeApplyMark(COMMON_MARK.code),
+  h1: cmdsBasic.makeApplyMark({type:'format', format:'h1'}),
+  h2: cmdsBasic.makeApplyMark({type:'format', format:'h2'}),
+  h3: cmdsBasic.makeApplyMark({type:'format', format:'h3'}),
 }

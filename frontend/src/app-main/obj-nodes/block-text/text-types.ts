@@ -55,7 +55,12 @@ export type InlineAtom =  {
 
 export type BlockText = {
   id: string|number;
-  content: InlineType[]
+  content: InlineType[];
+  attrs: {
+    level: 'h1' | 'h2' | 'h3' | 'paragraph';
+    align: 'left' | 'center' | 'right';
+    color: string; // text color in hex
+  };
 }
 
 
@@ -63,9 +68,10 @@ export const $BlockText = {
   sanitize(node : BlockText) : BlockText{
 
     if(node== undefined)
-      return {id:undefined, content:[]}
+      return {id:undefined, attrs: { level: 'paragraph', align: 'left', color: '#000000' }, content:[]}
 
-    const newContent = [];
+    const clone:BlockText = { ...node, attrs: { ...node.attrs } };
+    const newContent: InlineType[] = [];
     for (let idx = 0; idx < node.content.length; idx++) {
       let item:InlineType = node.content[idx];
       if ($BlockText.isTextItem(item)) {
@@ -76,8 +82,8 @@ export const $BlockText = {
           console.warn(`item ${idx} of Block Text is not an InlineText or InlineAtom.`);
         }
     }
-    node.content = newContent;
-    return node;
+    clone.content = newContent;
+    return clone;
   },
 
   isTextItem(item:InlineType){
