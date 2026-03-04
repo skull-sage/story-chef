@@ -98,8 +98,8 @@ export const COMMON_MARK = {
   bold: { type: 'format', format: 'bold' },
   italic: { type: 'format', format: 'italic' },
   code: { type: 'format', format: 'code' },
-  highlight: { type: 'highlight', styleClz: 'bg-line', color: '#ffe066' },
-  underline: { type: 'highlight', styleClz: 'uline', color: '#ffe066' },
+  hl_bgline: { type: 'highlight', styleClz: 'bg-line', color: '#ffe066' },
+  hl_uline: { type: 'highlight', styleClz: 'uline', color: '#ffe066' },
 }
 
 
