@@ -3,18 +3,18 @@
     <div class="row">
       <div class="col-8">
         <div class="text-bold q-mb-md">Interactive Content</div>
-        <BlockText :node="basicSample" ref="blockTextRef" />
+        <BlockText v-model="basicSample" ref="blockTextRef" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, shallowReactive } from "vue";
+import { onMounted, onBeforeUnmount, ref, shallowRef } from "vue";
 import BlockText from "./block-text/render/index.vue";
 import { basicSample as sampleBlockText } from "./data-samples/block-text";
 
-const basicSample = shallowReactive(sampleBlockText);
+const basicSample = shallowRef(sampleBlockText);
 
 
 

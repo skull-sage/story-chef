@@ -6,7 +6,7 @@
     @keydown="onKeydown"
     @mouseup="onMouseup"
   >
-    <template v-for="(item, idx) in node.content" :key="idx">
+    <template v-for="(item, idx) in localNode.content" :key="idx">
       <NodeText v-if="'text' in item" :node="item as InlineText" />
       <span
         v-else
@@ -22,26 +22,42 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, shallowReactive, shallowRef } from 'vue';
 import type { PropType } from 'vue';
-import type { BlockText, InlineAtom, InlineText, InlineType } from '../text-types';
+import { $BlockText, type BlockText, type InlineAtom, type InlineText, type InlineType } from '../text-types';
 import NodeText from './node-text.vue';
 import { calcTextLocalSelection, type TextSelection } from '../text-selection';
 import CmdsText, { FlatContent } from '../cmds-basic';
-import { markForKey } from '../keybindings';
+import { KEY_MAPPING } from '../cmd-mapping';
 
 
 export default defineComponent({
   name: 'BlockTextRender',
   components: { NodeText },
   props: {
-    node: { type: Object as PropType<BlockText>, required: true },
+    modelValue: { type: Object as PropType<BlockText>, required: true },
   },
+  emits: ['update:modelValue'],
   data() {
     return {
+      localNode: shallowRef($BlockText.sanitize(this.modelValue)),
       selectionState: undefined as TextSelection | undefined,
+
     };
   },
+  watch: {
+    localNode: {
+      deep: 1,
+      handler(newVal) {
+        this.$emit('update:modelValue', newVal);
+      }
+    },
+    modelValue(newVal) {
+      if (newVal === this.localNode) return;
+      this.localNode = shallowReactive($BlockText.sanitize(newVal));
+    }
+  },
+
   methods: {
     onSelectionChange() {
       const sel = window.getSelection();
@@ -50,71 +66,31 @@ export default defineComponent({
         return;
       }
       const root = this.$refs.rootRef as HTMLElement | null;
-      this.selectionState = calcTextLocalSelection(sel, root, this.node);
+      this.selectionState = calcTextLocalSelection(sel, root, this.localNode);
     },
     onMouseup() {
       console.log('#selection on mouse-up:', this.selectionState);
       if (this.selectionState) {
-        FlatContent.expand(this.node.content).log(this.selectionState.from, this.selectionState.to);
+        FlatContent.expand(this.localNode.content).log(this.selectionState.from, this.selectionState.to);
       }
     },
     onKeydown(e: KeyboardEvent) {
-      // Ctrl+V — paste clipboard as plain text
-      if (e.ctrlKey && e.key === 'v') {
-        e.preventDefault();
-        const sel = this.selectionState;
-        if (!sel) return;
-        navigator.clipboard.readText().then((raw) => {
-          if (!raw) return;
-          CmdsText.replaceText(this.node, sel, raw);
-        });
-        return;
-      }
-
-      // Mark shortcuts (bold, italic, etc.)
-      const mark = markForKey(e);
-      if (mark) {
-        e.preventDefault();
-        console.log(e, mark);
-        const sel = this.selectionState;
-        if (!sel) return;
-        CmdsText.applyMark(this.node, sel, mark);
-        return;
-      }
-
-      // Backspace — delete selection or char before cursor
-      if (e.key === 'Backspace') {
-        e.preventDefault();
-        const sel = this.selectionState;
-        if (!sel) return;
-        if (sel.from === sel.to) {
-          if (sel.from === 0) return;
-          CmdsText.replaceText(this.node, { ...sel, from: sel.from - 1 }, '');
-        } else {
-          CmdsText.replaceText(this.node, sel, '');
+      let keyStr = e.key;
+      if (e.ctrlKey && keyStr !== 'Control') {
+        keyStr = `Ctrl+${keyStr.toLowerCase()}`;
+        const cmd = KEY_MAPPING[keyStr as keyof typeof KEY_MAPPING];
+        if (cmd) {
+          e.preventDefault();
+          const sel = this.selectionState;
+          if (!sel) return;
+          cmd(this.localNode, sel);
+          return;
         }
-        return;
-      }
-
-      // Delete — delete selection or char after cursor
-      if (e.key === 'Delete') {
+      } else {
         e.preventDefault();
         const sel = this.selectionState;
         if (!sel) return;
-        if (sel.from === sel.to) {
-          CmdsText.replaceText(this.node, { ...sel, to: sel.to + 1 }, '');
-        } else {
-          CmdsText.replaceText(this.node, sel, '');
-        }
-        return;
-      }
-
-      // Printable character — insert/overwrite at selection
-      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        const sel = this.selectionState;
-        if (!sel) return;
-        CmdsText.replaceText(this.node, sel, e.key);
+        CmdsText.makeReplaceText(e.key)(this.localNode, sel);
         return;
       }
     },

@@ -3,7 +3,7 @@ import Animation from './animation/index.vue'
 import TestScreenRecorder from "./test-screen-recorder.vue";
 import NestTest from "./nest-test/index.vue"
 import {RouteRecordRaw} from "vue-router";
-
+import VueDepth from "./vue-depth/index.vue";
 
 const routeConfig: RouteRecordRaw =  {
       path: '/demo',
@@ -14,6 +14,11 @@ const routeConfig: RouteRecordRaw =  {
           name: 'demo.comp-test',
           component: CompTest,
 
+        },
+        {
+          path: 'vue-depth',
+          name: 'demo.vue-depth',
+          component: VueDepth,
         },
         {
           path: 'screen-record',
