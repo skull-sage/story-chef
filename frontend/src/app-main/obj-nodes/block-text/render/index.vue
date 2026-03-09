@@ -38,20 +38,7 @@ export default defineComponent({
     modelValue: { type: Object as PropType<BlockText>, required: true },
   },
   emits: ['update:modelValue'],
-  data() {
-    return {
-      localNode: shallowRef($BlockText.sanitize(this.modelValue)),
-      selectionState: undefined as TextSelection | undefined,
-
-    };
-  },
   watch: {
-    localNode: {
-      deep: 1,
-      handler(newVal) {
-        this.$emit('update:modelValue', newVal);
-      }
-    },
     modelValue(newVal) {
       if (newVal === this.localNode) return;
       this.localNode = shallowReactive($BlockText.sanitize(newVal));

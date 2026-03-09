@@ -1,51 +1,23 @@
 <template>
-  <div class="child-comp">
-    <input
-      v-model="localData"
-      type="text"
-      placeholder="Edit data"
-      @input="emitChanges"
-    />
-    <p>Current value: {{ localData }}</p>
-  </div>
+  <div>{{ changeCounter }}: {{ JSON.stringify(modelValue) }}</div>
 </template>
+<script lang="ts" setup>
+import { onBeforeUpdate, ref } from 'vue';
 
-<script>
-export default {
-  name: 'ChildComp',
-  props: {
-    sampleData: {
-      type: String,
-      default: ''
-    }
-  },
-  data() {
-    return {
-      localData: this.sampleData
-    };
-  },
-  watch: {
-    sampleData(newVal) {
-      this.localData = newVal;
-    }
-  },
-  methods: {
-    emitChanges() {
-      this.$emit('update:sampleData', this.localData);
-    }
+
+const props = defineProps({
+  modelValue: {
+    type: Object,
+    required: true
   }
-};
+});
+
+const emit = defineEmits(['update:modelValue']);
+const changeCounter = ref(0);
+
+onBeforeUpdate(() => {
+  console.log('child onBeforeUpdate');
+   changeCounter.value++;
+});
+
 </script>
-
-<style scoped>
-.child-comp {
-  padding: 10px;
-  border: 1px solid #ccc;
-}
-
-input {
-  padding: 5px;
-  width: 100%;
-  box-sizing: border-box;
-}
-</style>

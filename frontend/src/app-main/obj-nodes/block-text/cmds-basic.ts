@@ -1,6 +1,7 @@
 import { InlineText, InlineAtom, InlineType, isMarkEqual, MarkType } from "./text-types"
 import { BlockText } from "./text-types"
 import { TextSelection } from "./text-selection"
+import { DocText } from "./doc-text";
 
 
 
@@ -135,11 +136,11 @@ function replaceText(node:BlockText, selection: TextSelection, text: string){
 export default {
   // make prefix means we are creating functions that return
   // command (node, selection) => {mutation logic here}
-  makeReplaceText: (text: string) =>  (node:BlockText, selection: TextSelection) => {
-    replaceText(node, selection, text);
+  makeReplaceText: (text: string) =>  ({dataNode, selection} : DocText) => {
+    replaceText(dataNode, selection, text);
   },
 
-  makeClipboardText: () => (node: BlockText, selection: TextSelection) => {
+  makeClipboardPaste: () => (node: BlockText, selection: TextSelection) => {
       navigator.clipboard.readText().then((raw) => {
             if (!raw) return;
             replaceText(node, selection, raw);

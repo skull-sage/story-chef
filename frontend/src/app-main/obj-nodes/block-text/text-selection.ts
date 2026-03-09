@@ -4,11 +4,11 @@ import { $BlockText, BlockText, InlineText, InlineType, MarkType } from "./text-
 
 
 export type BlockRangeSelection = {
-  start: {blockId: number|string, from:number},
-  end: {blockId: number|string, to:number},
+  start: { blockId: number | string, from: number },
+  end: { blockId: number | string, to: number },
   mark: MarkType,
 }
- 
+
 
 // Helper type for selection state
 export interface TextSelection {
@@ -16,10 +16,12 @@ export interface TextSelection {
   //end: InlineSelection;
   from: number;
   to: number;
-  start: {inlineIdx:number, offset:number}
-  end: {inlineIdx:number, offset:number}
   mark: MarkType;
   focusXY?: { x: number; y: number } | null;
+
+  // below inline selection info are only for debugging purpose
+  start: { inlineIdx: number, offset: number }
+  end: { inlineIdx: number, offset: number }
 }
 
 
@@ -44,12 +46,12 @@ export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: B
   // block elm child list should be equal to blockContent except tail cursor elm
   for (let idx = 0; idx < node.content.length; idx++) {
     if (domChildren[idx].contains(startContainer)) {
-      start = {inlineIdx:idx, offset:startOffset};
+      start = { inlineIdx: idx, offset: startOffset };
       from = prefixLen + startOffset;
 
     }
     if (domChildren[idx].contains(endContainer)) {
-      end = {inlineIdx:idx, offset:endOffset};
+      end = { inlineIdx: idx, offset: endOffset };
       to = prefixLen + endOffset;
       break;
     }
@@ -63,9 +65,9 @@ export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: B
   if (start == undefined || end == undefined)
     return null;
 
-  if(start.inlineIdx == end.inlineIdx){
+  if (start.inlineIdx == end.inlineIdx) {
     const item = node.content[start.inlineIdx];
-    if($BlockText.isTextItem(item)){
+    if ($BlockText.isTextItem(item)) {
       mark = (item as InlineText).mark;
     }
   }
@@ -88,5 +90,33 @@ const calcFocusPos = (sel: Selection) => {
     }
   }
   return focusXY;
+}
+
+
+export function adjustTextLocalSelection(elm: HTMLElement, {from, to}: {from:number, to:number}) {
+  const sel = window.getSelection();
+  if (!sel) return;
+
+  const range = document.createRange();
+  range.setStart(elm, 0);
+  range.setEnd(elm, 0);
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  const children = elm.children;
+  let prefixLen = 0;
+
+  for (let idx = 0; idx < children.length; idx++) {
+    const child = children[idx] as HTMLElement;
+    const childLen = child.isContentEditable ? (child.textContent?.length || 0) : 1;
+
+    const offset = prefixLen - from;
+    if (offset >= 0 && offset <= childLen) {
+      range.setStart(child, offset);
+      break;
+    }
+    prefixLen += childLen;
+
+  }
 }
 

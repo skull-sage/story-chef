@@ -17,6 +17,8 @@ export function markForKey(e: KeyboardEvent): MarkType | undefined {
   }
 }
 
+
+
 export const DEFAULTS_CMDS = {
   bold: cmdsBasic.makeApplyMark(COMMON_MARK.bold),
   italic: cmdsBasic.makeApplyMark(COMMON_MARK.italic),
