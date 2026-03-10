@@ -53,12 +53,12 @@ export type InlineAtom =  {
   attrs: Record<string, any>;
 }
 
-export type BlockText = {
-  id: string|number;
+export interface BlockText {
+ // id: string|number;
   content: InlineType[];
   attrs: {
-    level: 'h1' | 'h2' | 'h3' | 'paragraph';
-    align: 'left' | 'center' | 'right';
+    level:  'h1' | 'h2' | 'h3' | 'paragraph' | string;
+    align: 'left' | 'center' | 'right' | string;
     color: string; // text color in hex
   };
 }

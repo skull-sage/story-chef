@@ -23,32 +23,28 @@ import { adjustTextLocalSelection, calcTextLocalSelection, TextSelection } from 
 };
 
 
-export class DocText{
-  dataNode : BlockText;
-  domElm : HTMLElement;
-  selection: TextSelection;
-  emitChange : ()=>void;
+export class DocText implements BlockText{
+  attrs: {level:string, align: string, color: string};
+  content : InlineType[];
 
-  constructor(dataNode: BlockText, domElm: HTMLElement){
-    this.dataNode = sanitize(dataNode);
-    this.domElm = domElm;
-    this.selection = undefined;
+  emitChange : (doc:DocText)=>void;
+
+  constructor(dataNode: BlockText, emitChange:(doc:DocText)=>void){
+    const {attrs, content} = sanitize(dataNode);
+    this.attrs = attrs;
+    this.content = content;
+    this.emitChange = emitChange;
   }
 
   itemLen(idx:number){
-    if(idx > this.dataNode.content.length)
+    if(idx > this.content.length)
       return 0;
-    const item = this.dataNode.content[idx]
+    const item = this.content[idx]
     // we only allow atom or text with non-empty string, so we can safely calculate length
     const len = 'text' in item ? item.text.length: 1;
     return len;
 
   }
-
-  calcDocSelection(sel: Selection) {
-    this.selection = calcTextLocalSelection(sel, this.domElm, this.dataNode);
-  }
-
 
   $patchAttr(attr: Object){
     for (const key in attr) {

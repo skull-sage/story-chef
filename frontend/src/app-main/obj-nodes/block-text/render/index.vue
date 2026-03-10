@@ -26,9 +26,10 @@ import { defineComponent, shallowReactive, shallowRef } from 'vue';
 import type { PropType } from 'vue';
 import { $BlockText, type BlockText, type InlineAtom, type InlineText, type InlineType } from '../text-types';
 import NodeText from './node-text.vue';
-import { calcTextLocalSelection, type TextSelection } from '../text-selection';
+import { adjustTextLocalSelection, calcTextLocalSelection, type TextSelection } from '../text-selection';
 import CmdsText, { FlatContent } from '../cmds-basic';
 import { KEY_MAPPING } from '../cmd-mapping';
+import { DocText } from '../doc-text';
 
 
 export default defineComponent({
@@ -38,14 +39,24 @@ export default defineComponent({
     modelValue: { type: Object as PropType<BlockText>, required: true },
   },
   emits: ['update:modelValue'],
-  watch: {
-    modelValue(newVal) {
-      if (newVal === this.localNode) return;
-      this.localNode = shallowReactive($BlockText.sanitize(newVal));
-    }
+  data(){
+    return {}
   },
 
+
   methods: {
+
+    mounted() {
+      const docText = new DocText(this.modelValue, (doc)=> {
+        this.$emit("update:modelValue", doc);
+        this.$nextTick(()=>adjustTextLocalSelection(this.$refs.rootRef, this.selectionState));
+      })
+      document.addEventListener('selectionchange', this.onSelectionChange);
+    },
+    beforeUnmount() {
+      document.removeEventListener('selectionchange', this.onSelectionChange);
+    },
+
     onSelectionChange() {
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0) {
@@ -81,13 +92,7 @@ export default defineComponent({
         return;
       }
     },
-  },
-  mounted() {
-    document.addEventListener('selectionchange', this.onSelectionChange);
-  },
-  beforeUnmount() {
-    document.removeEventListener('selectionchange', this.onSelectionChange);
-  },
+  }
 });
 
 </script>
