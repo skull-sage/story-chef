@@ -68,7 +68,7 @@ export const $BlockText = {
   sanitize(node : BlockText) : BlockText{
 
     if(node== undefined)
-      return {id:undefined, attrs: { level: 'paragraph', align: 'left', color: '#000000' }, content:[]}
+      return {attrs: { level: 'paragraph', align: 'left', color: '#000000' }, content:[]}
 
     const clone:BlockText = { ...node, attrs: { ...node.attrs } };
     const newContent: InlineType[] = [];
@@ -91,7 +91,7 @@ export const $BlockText = {
   },
 
   itemLength(item:InlineType){
-    if ($BlockText.isTextItem(item)) {
+    if ('text' in item) {
       return item.text?.length || 0;
     }
     return 1; // atom length is 1

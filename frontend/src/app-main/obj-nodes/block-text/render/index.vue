@@ -26,73 +26,83 @@ import { defineComponent, shallowReactive, shallowRef } from 'vue';
 import type { PropType } from 'vue';
 import { $BlockText, type BlockText, type InlineAtom, type InlineText, type InlineType } from '../text-types';
 import NodeText from './node-text.vue';
-import { adjustTextLocalSelection, calcTextLocalSelection, type TextSelection } from '../text-selection';
+import { adjustTextLocalSelection, calcTextLocalSelection, TextSelection } from '../text-selection';
 import CmdsText, { FlatContent } from '../cmds-basic';
 import { KEY_MAPPING } from '../cmd-mapping';
-import { DocText } from '../doc-text';
 
 
 export default defineComponent({
   name: 'BlockTextRender',
   components: { NodeText },
   props: {
-    modelValue: { type: Object as PropType<BlockText>, required: true },
+    modelValue: Object as PropType<BlockText>,
   },
   emits: ['update:modelValue'],
   data(){
-    return {}
+    return {
+      localNode: undefined as BlockText | undefined,//shallowReactive({attr:{}, content:[]}),
+      selState: undefined as TextSelection | undefined
+    }
+  },
+  watch:{
+    localNode: {
+      deep: 1,
+      handler(newVal){
+        this.$emit('update:modelValue', this.localNode);
+      }
+    },
+
+    modelValue:{
+      immediate:true,
+      handler(newVal){
+        if(newVal === undefined || newVal !== this.localNode){
+          this.localNode = shallowReactive($BlockText.sanitize(newVal));
+        }
+      }
+    },
   },
 
-
   methods: {
-
-    mounted() {
-      const docText = new DocText(this.modelValue, (doc)=> {
-        this.$emit("update:modelValue", doc);
-        this.$nextTick(()=>adjustTextLocalSelection(this.$refs.rootRef, this.selectionState));
-      })
-      document.addEventListener('selectionchange', this.onSelectionChange);
-    },
-    beforeUnmount() {
-      document.removeEventListener('selectionchange', this.onSelectionChange);
-    },
-
     onSelectionChange() {
-      const sel = window.getSelection();
-      if (!sel || sel.rangeCount === 0) {
-        this.selectionState = undefined;
-        return;
-      }
-      const root = this.$refs.rootRef as HTMLElement | null;
-      this.selectionState = calcTextLocalSelection(sel, root, this.localNode);
+       this.selState.trackDomSelection(this.localNode);
     },
     onMouseup() {
-      console.log('#selection on mouse-up:', this.selectionState);
-      if (this.selectionState) {
-        FlatContent.expand(this.localNode.content).log(this.selectionState.from, this.selectionState.to);
+      console.log('#selection on mouse-up:', this.selState);
+      if (this.selState) {
+        FlatContent.expand(this.localNode.content).log(this.selState.from, this.selState.to);
       }
     },
     onKeydown(e: KeyboardEvent) {
+      e.preventDefault();
       let keyStr = e.key;
+
       if (e.ctrlKey && keyStr !== 'Control') {
         keyStr = `Ctrl+${keyStr.toLowerCase()}`;
+         console.log('#Ctrl key:', keyStr);
         const cmd = KEY_MAPPING[keyStr as keyof typeof KEY_MAPPING];
         if (cmd) {
-          e.preventDefault();
-          const sel = this.selectionState;
+          const sel = this.selState;
           if (!sel) return;
           cmd(this.localNode, sel);
           return;
         }
       } else {
-        e.preventDefault();
-        const sel = this.selectionState;
+        console.log('#Plain key:', keyStr);
+        const sel = this.selState;
         if (!sel) return;
-        CmdsText.makeReplaceText(e.key)(this.localNode, sel);
+        CmdsText.makeReplaceText(e.key)(this.localNode, this.selState);
         return;
       }
     },
-  }
+  },
+   mounted() {
+    const sel = new TextSelection(this.$refs.rootRef as HTMLElement);
+    this.selState = shallowReactive(sel);
+    document.addEventListener('selectionchange', this.onSelectionChange);
+  },
+  beforeUnmount() {
+    document.removeEventListener('selectionchange', this.onSelectionChange);
+  },
 });
 
 </script>

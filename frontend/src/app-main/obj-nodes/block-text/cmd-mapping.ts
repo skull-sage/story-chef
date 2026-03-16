@@ -41,7 +41,7 @@ export const KEY_MAPPING = {
   'Ctrl+i': DEFAULTS_CMDS.italic,
   'Ctrl+h': DEFAULTS_CMDS.highlight,
   'Ctrl+u': DEFAULTS_CMDS.underline,
-  'Ctrl+v': cmdsBasic.makeClipboardText(),
+  'Ctrl+v': cmdsBasic.makeClipboardPaste(),
   'Backspace': cmdsBasic.makeDeleteLeft(),
   'Ctrl+1': DEFAULTS_CMDS.h1,
   'Ctrl+2': DEFAULTS_CMDS.h2,

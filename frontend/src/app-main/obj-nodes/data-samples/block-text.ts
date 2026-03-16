@@ -1,4 +1,4 @@
-import { BlockText } from "../block-text/block-type";
+import { BlockText } from "../block-text/text-types";
 
 
 export function utilCalcInlineOffset(content) {
@@ -22,11 +22,9 @@ export const basicSample: BlockText = {
   renderKey: 1,
   content: [
     {
-      type: "text",
       text: "Hello World! ",
     },
     {
-      type: "text",
       text: "This is a highlighted text. ",
       mark: {
         type: "highlight",
@@ -36,12 +34,10 @@ export const basicSample: BlockText = {
     },
 
     {
-      type: "atom",
       name: "InputAtom", // Example component name
       attrs: { placeholder: "an atom" },
     },
     {
-      type: "text",
       text: "! This is a test end.",
     },
   ],

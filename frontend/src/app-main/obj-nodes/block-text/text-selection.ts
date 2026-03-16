@@ -1,4 +1,5 @@
 
+import { nextTick } from "process";
 import { $BlockText, BlockText, InlineText, InlineType, MarkType } from "./text-types";
 
 
@@ -11,70 +12,71 @@ export type BlockRangeSelection = {
 
 
 // Helper type for selection state
-export interface TextSelection {
+export class TextSelection {
   //start: InlineSelection; // kept for future reference
   //end: InlineSelection;
-  from: number;
-  to: number;
-  mark: MarkType;
+  from: number = 0;
+  to: number = 0;
+  mark: MarkType = undefined;
   focusXY?: { x: number; y: number } | null;
 
   // below inline selection info are only for debugging purpose
-  start: { inlineIdx: number, offset: number }
-  end: { inlineIdx: number, offset: number }
+  start: { inlineIdx: number, offset: number } = undefined
+  end: { inlineIdx: number, offset: number } = undefined
+  refElm: HTMLElement;
+
+  constructor(refElm: HTMLElement) {
+    this.refElm = refElm;
+  }
+
+  trackDomSelection({ content }: BlockText) {
+    const sel = window.getSelection();
+    const validSel = sel && this.refElm.contains(sel.anchorNode) && this.refElm.contains(sel.focusNode);
+    if (!validSel) return;
+    let { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
+
+    let prefixLen = 0;
+    const domChildren = this.refElm.children;
+
+    // this loop won't run if node.content is empty
+    // html renders each item {InlineText, InlineAtom} wrapped in span tag
+    for (let idx = 0; idx < content.length; idx++) {
+      if (domChildren[idx].contains(startContainer)) {
+        this.start = { inlineIdx: idx, offset: startOffset };
+        this.from = prefixLen + startOffset;
+
+      }
+      if (domChildren[idx].contains(endContainer)) {
+        this.end = { inlineIdx: idx, offset: endOffset };
+        this.to = prefixLen + endOffset;
+        break;
+      }
+
+      let item = content[idx]
+      prefixLen += $BlockText.itemLength(item)
+
+    }
+
+
+    if (this.start && this.end && this.start.inlineIdx == this.end.inlineIdx) {
+      const item = content[this.start.inlineIdx];
+      if ($BlockText.isTextItem(item)) {
+        this.mark = (item as InlineText).mark;
+      }
+    }
+
+    console.log('# CALC selection', this.from, this.to, this.mark);
+  }
+
+  adjustDomSelection({ content }: BlockText, from: number, to: number) {
+    nextTick(() => {
+      adjustTextLocalSelection(this.refElm, from, to);
+    });
+  }
+
 }
 
 
-//calculate block text local selection
-// NOTE: Content is (InlineText | Atom) [],
-// Runtime expanded Content is ({char, mark} | atom)[],
-// Char Len = 1, atom = 1, char are collapsed into InlineText by mark-equality
-
-export function calcTextLocalSelection(sel: Selection, elm: HTMLElement, node: BlockText): BlockTextSelection | null {
-
-  if (!sel || sel.rangeCount === 0) {
-    return null;
-  }
-
-  let { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
-
-  let mark: MarkType;
-  let from = 0, prefixLen = 0, to = 0;
-  const domChildren = elm.children;
-  let start, end = undefined
-
-  // block elm child list should be equal to blockContent except tail cursor elm
-  for (let idx = 0; idx < node.content.length; idx++) {
-    if (domChildren[idx].contains(startContainer)) {
-      start = { inlineIdx: idx, offset: startOffset };
-      from = prefixLen + startOffset;
-
-    }
-    if (domChildren[idx].contains(endContainer)) {
-      end = { inlineIdx: idx, offset: endOffset };
-      to = prefixLen + endOffset;
-      break;
-    }
-
-    let item = node.content[idx]
-    prefixLen += $BlockText.itemLength(item)
-
-  }
-
-  // checking locality: both start and end of selection should be bounded by the text block
-  if (start == undefined || end == undefined)
-    return null;
-
-  if (start.inlineIdx == end.inlineIdx) {
-    const item = node.content[start.inlineIdx];
-    if ($BlockText.isTextItem(item)) {
-      mark = (item as InlineText).mark;
-    }
-  }
-
-  let selection: TextSelection = { start, end, from, to, focusXY: calcFocusPos(sel), mark };
-  return selection;
-}
 
 
 const calcFocusPos = (sel: Selection) => {
@@ -93,30 +95,51 @@ const calcFocusPos = (sel: Selection) => {
 }
 
 
-export function adjustTextLocalSelection(elm: HTMLElement, {from, to}: {from:number, to:number}) {
+export function adjustTextLocalSelection(elm: HTMLElement, from: number, to: number) {
   const sel = window.getSelection();
   if (!sel) return;
 
   const range = document.createRange();
-  range.setStart(elm, 0);
-  range.setEnd(elm, 0);
-  sel.removeAllRanges();
-  sel.addRange(range);
+  //range.setStart(elm, 0);
+  //range.setEnd(elm, 0);
+
 
   const children = elm.children;
   let prefixLen = 0;
 
-  for (let idx = 0; idx < children.length; idx++) {
+  let idx = 0;
+  while (idx < children.length) {
     const child = children[idx] as HTMLElement;
-    const childLen = child.isContentEditable ? (child.textContent?.length || 0) : 1;
+    let cLen;
+    if (child.isContentEditable) {
+      const textNode = child.firstChild as Node;
+      cLen = textNode.textContent?.length || 0;
+    } else {
+      cLen = 1;
+    }
 
-    const offset = prefixLen - from;
-    if (offset >= 0 && offset <= childLen) {
-      range.setStart(child, offset);
+    if (from >= prefixLen && from <= prefixLen + cLen) {
+      range.setStart(child, from - prefixLen);
       break;
     }
-    prefixLen += childLen;
-
+    prefixLen += cLen;
+    idx++;
   }
+
+  while (idx < children.length) {
+    const child = children[idx] as HTMLElement;
+    const cLen = child.isContentEditable ? (child.textContent?.length || 0) : 1;
+
+    if (to >= prefixLen && to <= prefixLen + cLen) {
+      range.setEnd(child, to - prefixLen);
+      break;
+    }
+    prefixLen += cLen;
+    idx++;
+  }
+
+  sel.removeAllRanges();
+  sel.addRange(range);
+  debugger;
 }
 

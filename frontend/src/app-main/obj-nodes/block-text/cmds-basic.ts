@@ -123,41 +123,42 @@ export class FlatContent {
 
 // as this function is common to many commands we intend to make
 // updating selction should change the domSelection utilizing Vue Watch Effect
-function replaceText(node:BlockText, selection: TextSelection, text: string){
-    const { from, to, mark } = selection;
-    const flatContent = FlatContent.expand(node.content);
-    const newContent = flatContent.replaceText(from, to, text, mark);
-    node.content = newContent;
-    selection.from = from + text.length; // abc|abcd|
-    selection.to = selection.from;
-    console.log("New Content:", node.content);
+function replaceText(node: BlockText, selection: TextSelection, text: string) {
+  const { from, to, mark } = selection;
+  const flatContent = FlatContent.expand(node.content);
+  const newContent = flatContent.replaceText(from, to, text, mark);
+  node.content = newContent;
+  selection.adjustDomSelection(node, from, from + text.length); // abc|abcd|
+  //debugger;
 }
+
 
 export default {
   // make prefix means we are creating functions that return
   // command (node, selection) => {mutation logic here}
-  makeReplaceText: (text: string) =>  ({dataNode, selection} : DocText) => {
-    replaceText(dataNode, selection, text);
+
+  makeReplaceText: (text: string) => (node: BlockText, selection: TextSelection) => {
+    replaceText(node, selection, text);
   },
 
   makeClipboardPaste: () => (node: BlockText, selection: TextSelection) => {
-      navigator.clipboard.readText().then((raw) => {
-            if (!raw) return;
-            replaceText(node, selection, raw);
-        });
+    navigator.clipboard.readText().then((raw) => {
+      if (!raw) return;
+      replaceText(node, selection, raw);
+    });
   },
 
   makeInsertAtom: (atom: InlineAtom) => (node: BlockText, selection: TextSelection) => {
-     console.warn("makeInsertAtom is not implemented yet");
+    console.warn("makeInsertAtom is not implemented yet");
   },
 
   makeDeleteLeft: () => (node: BlockText, selection: TextSelection) => {
     const { from, to, mark } = selection;
-    if(from !== to || from === 0) return; // if there is a selection or cursor is at the start, do nothing
+    if (from !== to || from === 0) return; // if there is a selection or cursor is at the start, do nothing
 
     const flatContent = FlatContent.expand(node.content);
-    node.content = flatContent.replaceText(from-1, to, '', mark);
-    selection.from = selection.to = from -1; // abc|abcd|
+    node.content = flatContent.replaceText(from - 1, to, '', mark);
+    selection.adjustDomSelection(node, from - 1, from - 1); // abc|abcd|
   },
 
   makeApplyMark: (mark: MarkType) => (node: BlockText, selection: TextSelection) => {
