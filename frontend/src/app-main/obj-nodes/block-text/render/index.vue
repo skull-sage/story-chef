@@ -22,13 +22,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, shallowReactive, shallowRef } from 'vue';
+import { defineComponent, markRaw, shallowReactive, shallowRef } from 'vue';
 import type { PropType } from 'vue';
 import { $BlockText, type BlockText, type InlineAtom, type InlineText, type InlineType } from '../text-types';
 import NodeText from './node-text.vue';
-import { adjustTextLocalSelection, calcTextLocalSelection, TextSelection } from '../text-selection';
 import CmdsText, { FlatContent } from '../cmds-basic';
 import { KEY_MAPPING } from '../cmd-mapping';
+import { SelectionState, TextSelection } from '../text-selection';
+import { NinText } from '../nin-text';
 
 
 export default defineComponent({
@@ -41,7 +42,7 @@ export default defineComponent({
   data(){
     return {
       localNode: undefined as BlockText | undefined,//shallowReactive({attr:{}, content:[]}),
-      selState: undefined as TextSelection | undefined
+      selState: markRaw({} as SelectionState),
     }
   },
   watch:{
@@ -63,41 +64,65 @@ export default defineComponent({
   },
 
   methods: {
-    onSelectionChange() {
-       this.selState.trackDomSelection(this.localNode);
-    },
+
     onMouseup() {
-      console.log('#selection on mouse-up:', this.selState);
-      if (this.selState) {
-        FlatContent.expand(this.localNode.content).log(this.selState.from, this.selState.to);
-      }
+      console.log('#selection on mouse-up:', this.selState.selection.value);
+      // if (this.selState) {
+      //   FlatContent.expand(this.localNode.content).log(this.selState.selection.value.from, this.selState.selection.value.to);
+      // }
     },
     onKeydown(e: KeyboardEvent) {
-      e.preventDefault();
-      let keyStr = e.key;
 
-      if (e.ctrlKey && keyStr !== 'Control') {
-        keyStr = `Ctrl+${keyStr.toLowerCase()}`;
-         console.log('#Ctrl key:', keyStr);
-        const cmd = KEY_MAPPING[keyStr as keyof typeof KEY_MAPPING];
-        if (cmd) {
-          const sel = this.selState;
-          if (!sel) return;
-          cmd(this.localNode, sel);
-          return;
-        }
-      } else {
-        console.log('#Plain key:', keyStr);
-        const sel = this.selState;
-        if (!sel) return;
-        CmdsText.makeReplaceText(e.key)(this.localNode, this.selState);
+      const keyStr = e.key;
+
+      if (!this.selState) return;
+
+
+      console.log('#Input Key Str:', keyStr, 'length:', keyStr.length, 'code-point:', keyStr.charCodeAt(0));
+
+      if(e.key === 'Backspace'){
+         e.preventDefault();
+        CmdsText.makeDeleteLeft()(this.localNode, this.selState);
         return;
       }
+
+      if (keyStr.length > 1) {
+        return;
+      }
+
+       e.preventDefault();
+
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
+
+        let mappingKey = '';
+        if (e.ctrlKey || e.metaKey) mappingKey += 'Ctrl+';
+
+        if (e.altKey) mappingKey += 'Alt+';
+        else if (e.shiftKey) mappingKey += 'Shift+';
+
+        let targetKey = keyStr;
+        if (targetKey.length === 1) {
+          targetKey = targetKey.toLowerCase();
+        }
+
+        const fullKey = mappingKey + targetKey;
+        const cmd = KEY_MAPPING[fullKey as keyof typeof KEY_MAPPING];
+        if(!cmd) return;
+
+        cmd(this.localNode, this.selState);
+        return;
+      }
+
+      console.log('#Plain key:', keyStr);
+      CmdsText.makeReplaceText(keyStr)(this.localNode, this.selState);
     },
+    onSelectionChange() {
+      this.selState.trackDomSelection(this.localNode.content);
   },
-   mounted() {
-    const sel = new TextSelection(this.$refs.rootRef as HTMLElement);
-    this.selState = shallowReactive(sel);
+  },
+
+  mounted() {
+    this.selState = markRaw(new SelectionState(this.$refs.rootRef as HTMLElement));
     document.addEventListener('selectionchange', this.onSelectionChange);
   },
   beforeUnmount() {
@@ -117,6 +142,7 @@ export default defineComponent({
   font-size: 1.1rem;
   outline: none;
   transition: box-shadow 0.2s;
+  white-space: pre-wrap;
 }
 
 .editable-content:focus {

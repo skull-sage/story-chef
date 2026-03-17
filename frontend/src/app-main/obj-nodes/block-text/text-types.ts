@@ -48,49 +48,51 @@ export type InlineText = {
   mark: MarkType;
 }
 
-export type InlineAtom =  {
+export type InlineAtom = {
   name: string;
   attrs: Record<string, any>;
 }
 
+export type TextAttr = {
+  level: 'h1' | 'h2' | 'h3' | 'paragraph' | string;
+  align: 'left' | 'center' | 'right' | string;
+  color: string; // text color in hex
+}
+
 export interface BlockText {
- // id: string|number;
+  // id: string|number;
   content: InlineType[];
-  attrs: {
-    level:  'h1' | 'h2' | 'h3' | 'paragraph' | string;
-    align: 'left' | 'center' | 'right' | string;
-    color: string; // text color in hex
-  };
+  attrs: TextAttr;
 }
 
 
 export const $BlockText = {
-  sanitize(node : BlockText) : BlockText{
+  sanitize(node: BlockText): BlockText {
 
-    if(node== undefined)
-      return {attrs: { level: 'paragraph', align: 'left', color: '#000000' }, content:[]}
+    if (node == undefined)
+      return { attrs: { level: 'paragraph', align: 'left', color: '#000000' }, content: [] }
 
-    const clone:BlockText = { ...node, attrs: { ...node.attrs } };
+    const clone: BlockText = { ...node, attrs: { ...node.attrs } };
     const newContent: InlineType[] = [];
     for (let idx = 0; idx < node.content.length; idx++) {
-      let item:InlineType = node.content[idx];
+      let item: InlineType = node.content[idx];
       if ($BlockText.isTextItem(item)) {
-          newContent.push(item);
-        } else if ('name' in item) {
-          newContent.push(item);
-        } else {
-          console.warn(`item ${idx} of Block Text is not an InlineText or InlineAtom.`);
-        }
+        newContent.push(item);
+      } else if ('name' in item) {
+        newContent.push(item);
+      } else {
+        console.warn(`item ${idx} of Block Text is not an InlineText or InlineAtom.`);
+      }
     }
     clone.content = newContent;
     return clone;
   },
 
-  isTextItem(item:InlineType){
+  isTextItem(item: InlineType) {
     return 'text' in item
   },
 
-  itemLength(item:InlineType){
+  itemLength(item: InlineType) {
     if ('text' in item) {
       return item.text?.length || 0;
     }

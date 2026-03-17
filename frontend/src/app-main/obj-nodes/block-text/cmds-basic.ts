@@ -1,7 +1,6 @@
 import { InlineText, InlineAtom, InlineType, isMarkEqual, MarkType } from "./text-types"
 import { BlockText } from "./text-types"
-import { TextSelection } from "./text-selection"
-import { DocText } from "./doc-text";
+import { SelectionState, TextSelection } from "./text-selection"
 
 
 
@@ -70,7 +69,6 @@ export class FlatContent {
   collapse(): InlineType[] {
     const newContent: InlineType[] = [];
     let currentMark: MarkType | undefined = this.markArr[0];
-    let sliceStart, sliceEnd: number;
     let currentText = "";
 
     for (let idx = 0; idx < this.valArr.length; idx++) {
@@ -123,13 +121,13 @@ export class FlatContent {
 
 // as this function is common to many commands we intend to make
 // updating selction should change the domSelection utilizing Vue Watch Effect
-function replaceText(node: BlockText, selection: TextSelection, text: string) {
-  const { from, to, mark } = selection;
+function replaceText(node: BlockText, selState: SelectionState, text: string) {
+  const { from, to, mark } = selState.selection.value;
   const flatContent = FlatContent.expand(node.content);
   const newContent = flatContent.replaceText(from, to, text, mark);
   node.content = newContent;
-  selection.adjustDomSelection(node, from, from + text.length); // abc|abcd|
-  //debugger;
+  const result = from + text.length;
+  selState.adjustDomSelection(node.content, result, result); // abc|abcd|
 }
 
 
@@ -137,43 +135,49 @@ export default {
   // make prefix means we are creating functions that return
   // command (node, selection) => {mutation logic here}
 
-  makeReplaceText: (text: string) => (node: BlockText, selection: TextSelection) => {
-    replaceText(node, selection, text);
+  makeReplaceText: (text: string) => (node: BlockText, selState: SelectionState) => {
+    replaceText(node, selState, text);
   },
 
-  makeClipboardPaste: () => (node: BlockText, selection: TextSelection) => {
+  makeClipboardPaste: () => (node: BlockText, selState: SelectionState) => {
     navigator.clipboard.readText().then((raw) => {
       if (!raw) return;
-      replaceText(node, selection, raw);
+      replaceText(node, selState, raw);
     });
   },
 
-  makeInsertAtom: (atom: InlineAtom) => (node: BlockText, selection: TextSelection) => {
+  makeInsertAtom: (atom: InlineAtom) => (node: BlockText, selState: SelectionState) => {
     console.warn("makeInsertAtom is not implemented yet");
   },
 
-  makeDeleteLeft: () => (node: BlockText, selection: TextSelection) => {
-    const { from, to, mark } = selection;
-    if (from !== to || from === 0) return; // if there is a selection or cursor is at the start, do nothing
+  makeDeleteLeft: () => (node: BlockText, selState: SelectionState) => {
+    const { from, to, mark } = selState.selection.value;
+    if (from === 0 && to === 0) return; // if there is a selection or cursor is at the start, do nothing
 
     const flatContent = FlatContent.expand(node.content);
-    node.content = flatContent.replaceText(from - 1, to, '', mark);
-    selection.adjustDomSelection(node, from - 1, from - 1); // abc|abcd|
+    if (to - from > 0) {
+      node.content = flatContent.replaceText(from, to, '', mark);
+      selState.adjustDomSelection(node.content, from, from); // abc|abcd|
+    } else {
+      node.content = flatContent.replaceText(from - 1, to, '', mark);
+      selState.adjustDomSelection(node.content, from - 1, from - 1); // abc|abcd|
+    }
+
   },
 
-  makeApplyMark: (mark: MarkType) => (node: BlockText, selection: TextSelection) => {
-    const { from, to } = selection;
+  makeApplyMark: (mark: MarkType) => (node: BlockText, selState: SelectionState) => {
+    const { from, to } = selState.selection.value;
     const flatContent = FlatContent.expand(node.content);
     flatContent.log(from, to);
-    if (selection.mark && isMarkEqual(selection.mark, mark)) {
+    if (selState.selection.value.mark && isMarkEqual(selState.selection.value.mark, mark)) {
       mark = undefined;
     }
     const newContent = flatContent.applyMark(from, to, mark);
     node.content = newContent;
-    console.log("New Content:", node.content);
+    selState.adjustDomSelection(node.content, from, to);
   },
 
-  makeApplyAttr: (attr: Object) => (node: BlockText, selection: TextSelection) => {
+  makeApplyAttr: (attr: Object) => (node: BlockText, selState: SelectionState) => {
     for (const key in attr) {
       node.attrs[key] = attr[key];
     }
