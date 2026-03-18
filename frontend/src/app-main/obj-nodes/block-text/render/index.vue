@@ -1,9 +1,11 @@
 <template>
   <div
+
     ref="rootRef"
     class="editable-content"
     contenteditable="true"
-    @keydown="onKeydown"
+    @keydown="onKeyDown"
+    @keyup="onKeyup"
     @mouseup="onMouseup"
   >
     <template v-for="(item, idx) in localNode.content" :key="idx">
@@ -24,7 +26,7 @@
 <script lang="ts">
 import { defineComponent, markRaw, shallowReactive, shallowRef } from 'vue';
 import type { PropType } from 'vue';
-import { $BlockText, type BlockText, type InlineAtom, type InlineText, type InlineType } from '../text-types';
+import { $BlockText, COMMON_MARK, type BlockText, type InlineAtom, type InlineText, type InlineType } from '../text-types';
 import NodeText from './node-text.vue';
 import CmdsText, { FlatContent } from '../cmds-basic';
 import { KEY_MAPPING } from '../cmd-mapping';
@@ -43,6 +45,7 @@ export default defineComponent({
     return {
       localNode: undefined as BlockText | undefined,//shallowReactive({attr:{}, content:[]}),
       selState: markRaw({} as SelectionState),
+      pKeyDown: '', // empty
     }
   },
   watch:{
@@ -71,41 +74,45 @@ export default defineComponent({
       //   FlatContent.expand(this.localNode.content).log(this.selState.selection.value.from, this.selState.selection.value.to);
       // }
     },
-    onKeydown(e: KeyboardEvent) {
+
+    onKeyup(e: KeyboardEvent) {
+      this.pKeyDown = '';
+    },
+    onKeyDown(e: KeyboardEvent) {
 
       const keyStr = e.key;
 
-      if (!this.selState) return;
-
-
-      console.log('#Input Key Str:', keyStr, 'length:', keyStr.length, 'code-point:', keyStr.charCodeAt(0));
-
-      if(e.key === 'Backspace'){
-         e.preventDefault();
-        CmdsText.makeDeleteLeft()(this.localNode, this.selState);
-        return;
+      if(keyStr === 'Backspace'){ // backspace is special
+          e.preventDefault();
+          CmdsText.makeDeleteLeft()(this.localNode, this.selState);
+          return;
       }
 
       if (keyStr.length > 1) {
+         // we pass mod keys Ctrl/Alt/Shift to the dom
+         return;
+      }
+
+      e.preventDefault();
+      console.log('#Input Key Str:', keyStr, 'length:', keyStr.length, 'code-point:', keyStr.charCodeAt(0));
+
+      if(this.pKeyDown){
         return;
       }
 
-       e.preventDefault();
+      this.pKeyDown += keyStr;
+
+      console.log('#COMMON MARK', COMMON_MARK);
 
       if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
 
-        let mappingKey = '';
-        if (e.ctrlKey || e.metaKey) mappingKey += 'Ctrl+';
+        let modKey = '';
+        if (e.ctrlKey || e.metaKey) modKey += 'Ctrl+';
 
-        if (e.altKey) mappingKey += 'Alt+';
-        else if (e.shiftKey) mappingKey += 'Shift+';
+        if (e.altKey) modKey += 'Alt+';
+        else if (e.shiftKey) modKey += 'Shift+';
 
-        let targetKey = keyStr;
-        if (targetKey.length === 1) {
-          targetKey = targetKey.toLowerCase();
-        }
-
-        const fullKey = mappingKey + targetKey;
+        const fullKey = modKey + keyStr;
         const cmd = KEY_MAPPING[fullKey as keyof typeof KEY_MAPPING];
         if(!cmd) return;
 
@@ -113,12 +120,12 @@ export default defineComponent({
         return;
       }
 
-      console.log('#Plain key:', keyStr);
       CmdsText.makeReplaceText(keyStr)(this.localNode, this.selState);
+
     },
     onSelectionChange() {
       this.selState.trackDomSelection(this.localNode.content);
-  },
+    },
   },
 
   mounted() {

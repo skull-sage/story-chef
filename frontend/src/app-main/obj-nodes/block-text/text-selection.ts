@@ -11,14 +11,19 @@ export type BlockRangeSelection = {
   mark: MarkType,
 }
 
+export type InlineSelection = {
+  inlineIdx: number;
+  offset: number;
+  isText: Boolean;
+}
 
 export type TextSelection = {
   from: number;
   to: number;
   mark: MarkType;
   focusXY?: { x: number; y: number } | null;
-  start?: { inlineIdx: number, offset: number };
-  end?: { inlineIdx: number, offset: number };
+  start?: InlineSelection;
+  end?: InlineSelection;
 }
 
 export class SelectionState {
@@ -35,20 +40,20 @@ export class SelectionState {
   trackDomSelection(content: InlineType[]) {
     console.log("## tracking dom selection for content: ", content);
     this.selection.value = calcFromDomSelection(this.elm, content);
-
+    console.log("## after tracking: calcFromDomSelection: ", this.selection.value);
   }
 
 
-  adjustDomSelection(content: InlineType[], from: number, to: number) {
-    console.log("## adjusting dom selection: Remove Prev Ranges");
-    this.domSelection.removeAllRanges();
-    adjustTextLocalSelection(this.elm, content, from, to)
-    //debugger;
-    // nextTick(() => {
 
-    //   console.log("## adjusting dom selection: Try setting new selection");
-    //   adjustTextLocalSelection(this.elm, content, from, to)
-    // });
+  adjustDomSelection(content: InlineType[], from: number, to: number) {
+    console.log("## adjusting dom selection:", from, to);
+
+    //adjustTextLocalSelection(this.elm, content, from, to);
+
+    this.domSelection.removeAllRanges();
+    nextTick(() => {
+      adjustTextLocalSelection(this.elm, content, from, to)
+    });
   }
 }
 
@@ -112,55 +117,52 @@ const calcFocusPos = (sel: Selection) => {
   return focusXY;
 }
 
-
-export function adjustTextLocalSelection(elm: HTMLElement, content: InlineType[], from: number, to: number) {
+export function setDomSelection(elm: HTMLElement, start: InlineSelection, end: InlineSelection) {
   const sel = window.getSelection();
   if (!sel) return;
 
   const range = document.createRange();
-
-  if (content.length == 0) {
+  if (!start || !end) {
     range.setStart(elm, 0);
     range.setEnd(elm, 0);
-    sel.removeAllRanges();
-    sel.addRange(range);
-    return;
+  } else {
+
+    const startChild = elm.children[start.inlineIdx];
+    const endChild = elm.children[end.inlineIdx];
+
+    if (start.isText) {
+      range.setStart(startChild.firstChild, start.offset);
+    } else {
+      range.setStart(startChild, start.offset);
+    }
+    if (end.isText) {
+      range.setEnd(endChild.firstChild, end.offset);
+    } else {
+      range.setEnd(endChild, end.offset);
+    }
   }
 
-  //range.setStart(elm, 0);
-  //range.setEnd(elm, 0);
-  let startIdx, startOffset, endIdx, endOffset;
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+}
+
+export function adjustTextLocalSelection(elm: HTMLElement, content: InlineType[], from: number, to: number) {
+
+  let start, end;
   let prefixLen = 0;
   for (let idx = 0; idx < content.length; idx++) {
-    const item = content[idx];
-    const len = $BlockText.itemLength(item);
-    if (from >= prefixLen && from <= prefixLen + len) {
-      startIdx = idx;
-      startOffset = from - prefixLen;
+    const { isText, itemLen } = $BlockText.itemInfo(content[idx]);
+    if (from >= prefixLen && from <= prefixLen + itemLen) {
+      start = { inlineIdx: idx, offset: from - prefixLen, isText };
     }
-    if (to >= prefixLen && to <= prefixLen + len) {
-      endIdx = idx;
-      endOffset = to - prefixLen;
+    if (to >= prefixLen && to <= prefixLen + itemLen) {
+      end = { inlineIdx: idx, offset: to - prefixLen, isText };
     }
-    prefixLen += len;
+    prefixLen += itemLen;
   }
 
-  const children = elm.children;
-  if ('text' in content[startIdx]) {
-    range.setStart(children[startIdx].firstChild, startOffset);
-  } else {
-    range.setStart(children[startIdx], startOffset);
-  }
-
-  if ('text' in content[endIdx]) {
-    range.setEnd(children[endIdx].firstChild, endOffset);
-
-  } else {
-    range.setEnd(children[endIdx], endOffset);
-  }
-
-
-  sel.addRange(range);
+  setDomSelection(elm, start, end);
 
 }
 

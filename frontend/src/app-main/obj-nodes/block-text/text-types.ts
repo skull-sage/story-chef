@@ -97,7 +97,16 @@ export const $BlockText = {
       return item.text?.length || 0;
     }
     return 1; // atom length is 1
+  },
+
+  itemInfo(item: InlineType) {
+    if ('text' in item) {
+      return { isText: true, itemLen: item.text.length };
+    } else {
+      return { isText: false, itemLen: 1 };
+    }
   }
+
 
 }
 

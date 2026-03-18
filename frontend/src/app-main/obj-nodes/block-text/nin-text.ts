@@ -25,7 +25,7 @@ export class NinText {
     this.domSelection.removeAllRanges();
     this.emitChange(this.dataNode);
     nextTick(() => {
-      adjustTextLocalSelection(this.elm, this.dataNode, adjustFrom, adjustTo);
+      adjustTextLocalSelection(this.elm, content, adjustFrom, adjustTo);
     });
   }
 

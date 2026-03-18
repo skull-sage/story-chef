@@ -1,6 +1,7 @@
 import { InlineText, InlineAtom, InlineType, isMarkEqual, MarkType } from "./text-types"
 import { BlockText } from "./text-types"
 import { SelectionState, TextSelection } from "./text-selection"
+import { nextTick } from "process";
 
 
 
@@ -125,9 +126,11 @@ function replaceText(node: BlockText, selState: SelectionState, text: string) {
   const { from, to, mark } = selState.selection.value;
   const flatContent = FlatContent.expand(node.content);
   const newContent = flatContent.replaceText(from, to, text, mark);
-  node.content = newContent;
   const result = from + text.length;
-  selState.adjustDomSelection(node.content, result, result); // abc|abcd|
+  node.content = newContent;
+  selState.adjustDomSelection(node.content, result, result);
+
+  // abc|abcd|
 }
 
 
@@ -163,16 +166,14 @@ export default {
       selState.adjustDomSelection(node.content, from - 1, from - 1); // abc|abcd|
     }
 
+
   },
 
   makeApplyMark: (mark: MarkType) => (node: BlockText, selState: SelectionState) => {
-    const { from, to } = selState.selection.value;
+    const { from, to, mark: selMark } = selState.selection.value;
     const flatContent = FlatContent.expand(node.content);
-    flatContent.log(from, to);
-    if (selState.selection.value.mark && isMarkEqual(selState.selection.value.mark, mark)) {
-      mark = undefined;
-    }
-    const newContent = flatContent.applyMark(from, to, mark);
+    let toApply = selMark && isMarkEqual(selMark, mark) ? undefined : mark;
+    const newContent = flatContent.applyMark(from, to, toApply);
     node.content = newContent;
     selState.adjustDomSelection(node.content, from, to);
   },
