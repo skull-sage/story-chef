@@ -69,21 +69,29 @@ export interface BlockText {
 export const $BlockText = {
   sanitize(node: BlockText): BlockText {
 
-    if (node == undefined)
-      return { attrs: { level: 'paragraph', align: 'left', color: '#000000' }, content: [] }
+    if (node == undefined) {
+      let attrs = { level: 'paragraph', align: 'left', color: '#000000' };
+      let content = [{ text: '', mark: undefined }];
+      return { attrs, content }
+    }
 
     const clone: BlockText = { ...node, attrs: { ...node.attrs } };
     const newContent: InlineType[] = [];
-    for (let idx = 0; idx < node.content.length; idx++) {
-      let item: InlineType = node.content[idx];
-      if ($BlockText.isTextItem(item)) {
-        newContent.push(item);
-      } else if ('name' in item) {
-        newContent.push(item);
-      } else {
-        console.warn(`item ${idx} of Block Text is not an InlineText or InlineAtom.`);
+
+    if (node.content.length === 0) {
+      newContent.push({ text: '', mark: undefined });
+    } else {
+      for (let idx = 0; idx < node.content.length; idx++) {
+        let item: InlineType = node.content[idx];
+        if ('text' in item || 'name' in item) {
+          newContent.push(item);
+        } else {
+          console.warn(`item ${idx} of Block Text is not an InlineText or InlineAtom.`);
+        }
       }
     }
+
+
     clone.content = newContent;
     return clone;
   },

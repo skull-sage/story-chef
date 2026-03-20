@@ -1,142 +1,167 @@
 <template>
   <div
-
     ref="rootRef"
     class="editable-content"
     contenteditable="true"
-    @keydown="onKeyDown"
-    @keyup="onKeyup"
     @mouseup="onMouseup"
-  >
-    <template v-for="(item, idx) in localNode.content" :key="idx">
-      <NodeText v-if="'text' in item" :node="item as InlineText" />
-      <span
-        v-else
-        contenteditable="false"
-        class="atom-element"
-      >
-        {{ (item as InlineAtom).name }}
-      </span>
-
-
-    </template>
-  </div>
+    @keydown=" "
+    @keyup=" "
+    @focus="onFocus"
+  ><TextContent :content="localNode?.content || []" /></div>
 </template>
 
-<script lang="ts">
-import { defineComponent, markRaw, shallowReactive, shallowRef } from 'vue';
+<script setup lang="ts">
+import { ref, watch, markRaw, onMounted, onBeforeUnmount, shallowReactive, shallowRef } from 'vue';
 import type { PropType } from 'vue';
 import { $BlockText, COMMON_MARK, type BlockText, type InlineAtom, type InlineText, type InlineType } from '../text-types';
-import NodeText from './node-text.vue';
+import TextContent from './text-content.vue';
 import CmdsText, { FlatContent } from '../cmds-basic';
 import { KEY_MAPPING } from '../cmd-mapping';
 import { SelectionState, TextSelection } from '../text-selection';
-import { NinText } from '../nin-text';
 
-
-export default defineComponent({
-  name: 'BlockTextRender',
-  components: { NodeText },
-  props: {
-    modelValue: Object as PropType<BlockText>,
-  },
-  emits: ['update:modelValue'],
-  data(){
-    return {
-      localNode: undefined as BlockText | undefined,//shallowReactive({attr:{}, content:[]}),
-      selState: markRaw({} as SelectionState),
-      pKeyDown: '', // empty
-    }
-  },
-  watch:{
-    localNode: {
-      deep: 1,
-      handler(newVal){
-        this.$emit('update:modelValue', this.localNode);
-      }
-    },
-
-    modelValue:{
-      immediate:true,
-      handler(newVal){
-        if(newVal === undefined || newVal !== this.localNode){
-          this.localNode = shallowReactive($BlockText.sanitize(newVal));
-        }
-      }
-    },
-  },
-
-  methods: {
-
-    onMouseup() {
-      console.log('#selection on mouse-up:', this.selState.selection.value);
-      // if (this.selState) {
-      //   FlatContent.expand(this.localNode.content).log(this.selState.selection.value.from, this.selState.selection.value.to);
-      // }
-    },
-
-    onKeyup(e: KeyboardEvent) {
-      this.pKeyDown = '';
-    },
-    onKeyDown(e: KeyboardEvent) {
-
-      const keyStr = e.key;
-
-      if(keyStr === 'Backspace'){ // backspace is special
-          e.preventDefault();
-          CmdsText.makeDeleteLeft()(this.localNode, this.selState);
-          return;
-      }
-
-      if (keyStr.length > 1) {
-         // we pass mod keys Ctrl/Alt/Shift to the dom
-         return;
-      }
-
-      e.preventDefault();
-      console.log('#Input Key Str:', keyStr, 'length:', keyStr.length, 'code-point:', keyStr.charCodeAt(0));
-
-      if(this.pKeyDown){
-        return;
-      }
-
-      this.pKeyDown += keyStr;
-
-      console.log('#COMMON MARK', COMMON_MARK);
-
-      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
-
-        let modKey = '';
-        if (e.ctrlKey || e.metaKey) modKey += 'Ctrl+';
-
-        if (e.altKey) modKey += 'Alt+';
-        else if (e.shiftKey) modKey += 'Shift+';
-
-        const fullKey = modKey + keyStr;
-        const cmd = KEY_MAPPING[fullKey as keyof typeof KEY_MAPPING];
-        if(!cmd) return;
-
-        cmd(this.localNode, this.selState);
-        return;
-      }
-
-      CmdsText.makeReplaceText(keyStr)(this.localNode, this.selState);
-
-    },
-    onSelectionChange() {
-      this.selState.trackDomSelection(this.localNode.content);
-    },
-  },
-
-  mounted() {
-    this.selState = markRaw(new SelectionState(this.$refs.rootRef as HTMLElement));
-    document.addEventListener('selectionchange', this.onSelectionChange);
-  },
-  beforeUnmount() {
-    document.removeEventListener('selectionchange', this.onSelectionChange);
-  },
+const props = defineProps({
+  modelValue: {
+    type: Object as PropType<BlockText>,
+    required: false
+  }
 });
 
+const emit = defineEmits(['update:modelValue']);
+
+const rootRef = ref<HTMLElement | null>(null);
+let localNode = shallowReactive(undefined as BlockText | undefined);
+const selState = shallowRef<SelectionState>();
+
+let pKeyDown = '';
+let mutationObserver: MutationObserver | null = null;
+
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    if (newVal === undefined || newVal !== localNode) {
+      localNode = shallowReactive($BlockText.sanitize(newVal as BlockText));
+    }
+  },
+  { immediate: true }
+);
+
+
+const onMouseup = () => {
+  // onMouseup logic placeholder
+};
+
+const onFocus = () => {
+  if (localNode?.content.length > 0)
+    return;
+
+    // we want to handle only the case when the node is empty
+
+  const rootEl = rootRef.value;
+  if (!rootEl) return;
+
+  const lastEl = rootEl.lastElementChild;
+  if (!lastEl) return;
+  debugger;
+
+  const firstChild = lastEl.firstChild;
+  if (!firstChild) return;
+
+  const sel = window.getSelection();
+  if (sel) {
+    const range = document.createRange();
+    range.setStart(firstChild, 0);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+};
+
+const onKeyup = (e: KeyboardEvent) => {
+  pKeyDown = '';
+};
+
+const onKeyDown = (e: KeyboardEvent) => {
+  const keyStr = e.key;
+
+  if (keyStr === 'Backspace') {
+    e.preventDefault();
+    if (localNode.value && selState.value) {
+      CmdsText.makeDeleteLeft()(localNode.value, selState.value);
+    }
+    return;
+  }
+
+  if (keyStr.length > 1) {
+    return; // pass mod keys Ctrl/Alt/Shift to the dom
+  }
+
+  e.preventDefault();
+  console.log('#Input Key Str:', keyStr, 'length:', keyStr.length, 'code-point:', keyStr.charCodeAt(0));
+
+  if (pKeyDown) {
+    return;
+  }
+  pKeyDown += keyStr;
+
+  console.log('#COMMON MARK', COMMON_MARK);
+
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
+    let modKey = '';
+    if (e.ctrlKey || e.metaKey) modKey += 'Ctrl+';
+    if (e.altKey) modKey += 'Alt+';
+    else if (e.shiftKey) modKey += 'Shift+';
+
+    const fullKey = modKey + keyStr;
+    const cmd = KEY_MAPPING[fullKey as keyof typeof KEY_MAPPING];
+    if (!cmd) return;
+
+    if (localNode.value && selState.value) {
+      cmd(localNode.value, selState.value);
+    }
+    return;
+  }
+
+  if (localNode.value && selState.value) {
+    CmdsText.makeReplaceText(keyStr)(localNode.value, selState.value);
+  }
+};
+
+const onSelectionChange = () => {
+  console.log('## SELECTION CHANGES', window.getSelection());
+};
+
+onMounted(() => {
+  const rootEl = rootRef.value;
+  if (!rootEl) return;
+
+  Array.from(rootEl.childNodes).forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE && /^\s+$/.test(node.nodeValue || '')) {
+      rootEl.removeChild(node);
+    }
+  });
+
+  selState.value = markRaw(new SelectionState(rootEl));
+  document.addEventListener('selectionchange', onSelectionChange);
+
+  mutationObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      console.log('*** MUTATION OBSERVED ***:', mutation);
+    });
+  });
+
+  mutationObserver.observe(rootEl, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('selectionchange', onSelectionChange);
+  if (mutationObserver) {
+    mutationObserver.disconnect();
+  }
+});
 </script>
 
 <style scoped>
@@ -156,7 +181,6 @@ export default defineComponent({
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
   border-color: #4299e1;
 }
-
 
 .atom-element {
   display: inline-block;

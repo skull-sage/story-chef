@@ -3,13 +3,13 @@ import { adjustTextLocalSelection, calcFromDomSelection, TextSelection } from ".
 import { nextTick } from "process";
 import { ShallowReactive, shallowRef, ShallowRef } from "vue";
 
-export class NinText {
+export default class NinState {
 
   dataNode: BlockText;
   elm: HTMLElement;
   selection: ShallowRef<TextSelection>;
   domSelection: Selection;
-
+  renderKey: number;
   emitChange: (node: BlockText) => void;
 
   constructor(node: BlockText, elm: HTMLElement, emitChange: (node: BlockText) => void) {
@@ -18,26 +18,34 @@ export class NinText {
     this.selection = shallowRef({ from: 0, to: 0, mark: undefined });
     this.domSelection = window.getSelection()!;
     this.emitChange = emitChange;
+    this.renderKey = 0;
   }
 
   $patchContent(content: InlineType[], adjustFrom: number, adjustTo: number) {
     this.dataNode.content = content;
     this.domSelection.removeAllRanges();
     this.emitChange(this.dataNode);
+    this.renderKey++;
     nextTick(() => {
       adjustTextLocalSelection(this.elm, content, adjustFrom, adjustTo);
     });
   }
 
-  $patchAttr(attrs: TextAttr) {
-    for (const key in attrs) {
-      this.dataNode.attrs[key] = attrs[key];
-    }
-    this.emitChange(this.dataNode);
-  }
 
-  trackDomSelection() {
+  // $patchAttr(attrs: TextAttr) {
+  //   for (const key in attrs) {
+  //     this.dataNode.attrs[key] = attrs[key];
+  //   }
+  //   this.emitChange(this.dataNode);
+  //   this.renderKey++;
+  // }
+
+  trackDomCharMutation(target: Node) {
+
+  }
+  trackDomSelectionChange() {
     this.selection.value = calcFromDomSelection(this.elm, this.dataNode.content);
+
   }
 
 

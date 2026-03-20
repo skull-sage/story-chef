@@ -38,15 +38,15 @@ export class SelectionState {
   }
 
   trackDomSelection(content: InlineType[]) {
-    console.log("## tracking dom selection for content: ", content);
+    //console.log("## tracking dom selection for content: ", content);
     this.selection.value = calcFromDomSelection(this.elm, content);
-    console.log("## after tracking: calcFromDomSelection: ", this.selection.value);
+    //console.log("## after tracking: calcFromDomSelection: ", this.selection.value);
   }
 
 
 
   adjustDomSelection(content: InlineType[], from: number, to: number) {
-    console.log("## adjusting dom selection:", from, to);
+    // console.log("## adjusting dom selection:", from, to);
 
     //adjustTextLocalSelection(this.elm, content, from, to);
 
