@@ -3,7 +3,9 @@
     <div class="row">
       <div class="col-8">
         <div class="text-bold q-mb-md">Interactive Content</div>
-        <BlockText v-model="textNode" ref="blockTextRef" />
+        <!-- <BlockText v-model="textNode" ref="blockTextRef" /> -->
+        <!-- <MutationExample /> -->
+        <VNodeRender />
       </div>
     </div>
   </div>
@@ -11,9 +13,10 @@
 
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, shallowRef } from "vue";
-import BlockText from "./block-text/render/index.vue";
+import BlockText from "./block-text/render-index.vue";
 import { basicSample as sampleBlockText } from "./data-samples/block-text";
-
+import MutationExample from "./mutation-example.vue";
+import VNodeRender from "./vnode-render.vue";
 
 const textNode = undefined; // shallowRef(sampleBlockText);
 

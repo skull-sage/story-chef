@@ -1,6 +1,6 @@
 
 import { nextTick } from "process";
-import { $BlockText, BlockText, InlineText, InlineType, MarkType } from "./text-types";
+import { $BlockText, BlockText, InlineText, InlineItem, MarkType } from "./text-types";
 import { shallowRef, ShallowRef } from "vue";
 
 
@@ -37,7 +37,7 @@ export class SelectionState {
     this.domSelection = window.getSelection()!;
   }
 
-  trackDomSelection(content: InlineType[]) {
+  trackDomSelection(content: InlineItem[]) {
     //console.log("## tracking dom selection for content: ", content);
     this.selection.value = calcFromDomSelection(this.elm, content);
     //console.log("## after tracking: calcFromDomSelection: ", this.selection.value);
@@ -45,7 +45,7 @@ export class SelectionState {
 
 
 
-  adjustDomSelection(content: InlineType[], from: number, to: number) {
+  adjustDomSelection(content: InlineItem[], from: number, to: number) {
     // console.log("## adjusting dom selection:", from, to);
 
     //adjustTextLocalSelection(this.elm, content, from, to);
@@ -58,7 +58,7 @@ export class SelectionState {
 }
 
 
-export function calcFromDomSelection(elm: HTMLElement, content: InlineType[]): TextSelection {
+export function calcFromDomSelection(elm: HTMLElement, content: InlineItem[]): TextSelection {
   const sel = window.getSelection();
   const validSel = sel && elm.contains(sel.anchorNode) && elm.contains(sel.focusNode);
   if (!validSel) return;
@@ -147,7 +147,7 @@ export function setDomSelection(elm: HTMLElement, start: InlineSelection, end: I
 
 }
 
-export function adjustTextLocalSelection(elm: HTMLElement, content: InlineType[], from: number, to: number) {
+export function adjustTextLocalSelection(elm: HTMLElement, content: InlineItem[], from: number, to: number) {
 
   let start, end;
   let prefixLen = 0;

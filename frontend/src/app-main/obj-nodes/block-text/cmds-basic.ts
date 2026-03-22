@@ -1,7 +1,8 @@
-import { InlineText, InlineAtom, InlineType, isMarkEqual, MarkType } from "./text-types"
+import { InlineText, InlineAtom, InlineItem, isMarkEqual, MarkType } from "./text-types"
 import { BlockText } from "./text-types"
 import { SelectionState, TextSelection } from "./text-selection"
 import { nextTick } from "process";
+import NinState from "./nin-state";
 
 
 
@@ -15,7 +16,7 @@ export class FlatContent {
     this.markArr = markArr;
   }
 
-  static expand(content: InlineType[]): FlatContent {
+  static expand(content: InlineItem[]): FlatContent {
     const flat = new FlatContent([], []);
     for (let idx = 0; idx < content.length; idx++) {
       let item = content[idx];
@@ -67,8 +68,8 @@ export class FlatContent {
     console.log("#sel", result);
   }
 
-  collapse(): InlineType[] {
-    const newContent: InlineType[] = [];
+  collapse(): InlineItem[] {
+    const newContent: InlineItem[] = [];
     let currentMark: MarkType | undefined = this.markArr[0];
     let currentText = "";
 
@@ -103,7 +104,7 @@ export class FlatContent {
     return newContent;
   }
 
-  applyMark(from: number, to: number, mark: MarkType): InlineType[] {
+  applyMark(from: number, to: number, mark: MarkType): InlineItem[] {
     for (let idx = from; idx < to; idx++) {
       this.markArr[idx] = mark;
     }
@@ -111,7 +112,7 @@ export class FlatContent {
 
   }
 
-  replaceText(from: number, to: number, newText: string, mark: MarkType | undefined): InlineType[] {
+  replaceText(from: number, to: number, newText: string, mark: MarkType | undefined): InlineItem[] {
 
     this.valArr.splice(from, to - from, ...[...newText].map(ch => ch.charCodeAt(0)));
     this.markArr.splice(from, to - from, ...new Array(newText.length).fill(mark));
@@ -122,13 +123,13 @@ export class FlatContent {
 
 // as this function is common to many commands we intend to make
 // updating selction should change the domSelection utilizing Vue Watch Effect
-function replaceText(node: BlockText, selState: SelectionState, text: string) {
-  const { from, to, mark } = selState.selection.value;
-  const flatContent = FlatContent.expand(node.content);
+function replaceText(ninState: NinState, text: string) {
+  const { from, to, mark } = ninState.selection();
+  const flatContent = FlatContent.expand(ninState.dataNode.content);
   const newContent = flatContent.replaceText(from, to, text, mark);
   const result = from + text.length;
-  node.content = newContent;
-  selState.adjustDomSelection(node.content, result, result);
+  ninState.dataNode.content = newContent;
+  ninState.adjustDomSelection(newContent, result, result);
 
   // abc|abcd|
 }
@@ -138,51 +139,51 @@ export default {
   // make prefix means we are creating functions that return
   // command (node, selection) => {mutation logic here}
 
-  makeReplaceText: (text: string) => (node: BlockText, selState: SelectionState) => {
-    replaceText(node, selState, text);
+  makeReplaceText: (text: string) => (ninState: NinState) => {
+    replaceText(ninState, text);
   },
 
-  makeClipboardPaste: () => (node: BlockText, selState: SelectionState) => {
+  makeClipboardPaste: () => (ninState: NinState) => {
     navigator.clipboard.readText().then((raw) => {
       if (!raw) return;
-      replaceText(node, selState, raw);
+      replaceText(ninState, raw);
     });
   },
 
-  makeInsertAtom: (atom: InlineAtom) => (node: BlockText, selState: SelectionState) => {
+  makeInsertAtom: (atom: InlineAtom) => (ninState: NinState) => {
     console.warn("makeInsertAtom is not implemented yet");
   },
 
-  makeDeleteLeft: () => (node: BlockText, selState: SelectionState) => {
-    const { from, to, mark } = selState.selection.value;
-    if (from === 0 && to === 0) return; // if there is a selection or cursor is at the start, do nothing
+  makeDeleteLeft: () => (ninState: NinState) => {
+    const { from, to, mark } = ninState.selection();
+    if (to - from == 0) return; // if there is a selection or cursor is at the start, do nothing
 
-    const flatContent = FlatContent.expand(node.content);
-    if (to - from > 0) {
-      node.content = flatContent.replaceText(from, to, '', mark);
-      selState.adjustDomSelection(node.content, from, from); // abc|abcd|
-    } else {
-      node.content = flatContent.replaceText(from - 1, to, '', mark);
-      selState.adjustDomSelection(node.content, from - 1, from - 1); // abc|abcd|
-    }
+    const flatContent = FlatContent.expand(ninState.dataNode.content);
+    const newContent = flatContent.replaceText(from, to, '', mark);
+    ninState.$patchContent(newContent, from, from);
 
+    /*
+    delete with Caret selection  are left for handling mutation observer:
+       ninState.dataNode.content = flatContent.replaceText(from - 1, to, '', mark);
+      ninState.adjustDomSelection(ninState.dataNode.content, from - 1, from - 1);
+    */
 
   },
 
-  makeApplyMark: (mark: MarkType) => (node: BlockText, selState: SelectionState) => {
-    const { from, to, mark: selMark } = selState.selection.value;
-    const flatContent = FlatContent.expand(node.content);
+  makeApplyMark: (mark: MarkType) => (ninState: NinState) => {
+    const { from, to, mark: selMark } = ninState.selection();
+    const flatContent = FlatContent.expand(ninState.dataNode.content);
     let toApply = selMark && isMarkEqual(selMark, mark) ? undefined : mark;
     const newContent = flatContent.applyMark(from, to, toApply);
-    node.content = newContent;
-    selState.adjustDomSelection(node.content, from, to);
+    ninState.$patchContent(newContent, from, to);
   },
 
-  makeApplyAttr: (attr: Object) => (node: BlockText, selState: SelectionState) => {
+  makeApplyAttr: (attr: any) => (ninState: NinState) => {
     for (const key in attr) {
-      node.attrs[key] = attr[key];
+      (ninState.dataNode.attrs as any)[key] = attr[key];
     }
-
+    ninState.emitChange(ninState.dataNode);
+    ninState.renderKey++;
   }
 
 }

@@ -41,7 +41,7 @@ export type MarkHighlight = MarkType & {
 
 
 
-export type InlineType = InlineText | InlineAtom;
+export type InlineItem = InlineText | InlineAtom;
 
 export type InlineText = {
   text: string;
@@ -56,12 +56,13 @@ export type InlineAtom = {
 export type TextAttr = {
   level: 'h1' | 'h2' | 'h3' | 'paragraph' | string;
   align: 'left' | 'center' | 'right' | string;
-  color: string; // text color in hex
+  txtColor: string; // text color in hex
+  bgColor: string; // background color in hex
 }
 
 export interface BlockText {
   // id: string|number;
-  content: InlineType[];
+  content: InlineItem[];
   attrs: TextAttr;
 }
 
@@ -76,13 +77,13 @@ export const $BlockText = {
     }
 
     const clone: BlockText = { ...node, attrs: { ...node.attrs } };
-    const newContent: InlineType[] = [];
+    const newContent: InlineItem[] = [];
 
     if (node.content.length === 0) {
       newContent.push({ text: '', mark: undefined });
     } else {
       for (let idx = 0; idx < node.content.length; idx++) {
-        let item: InlineType = node.content[idx];
+        let item: InlineItem = node.content[idx];
         if ('text' in item || 'name' in item) {
           newContent.push(item);
         } else {
@@ -96,18 +97,18 @@ export const $BlockText = {
     return clone;
   },
 
-  isTextItem(item: InlineType) {
+  isTextItem(item: InlineItem) {
     return 'text' in item
   },
 
-  itemLength(item: InlineType) {
+  itemLength(item: InlineItem) {
     if ('text' in item) {
       return item.text?.length || 0;
     }
     return 1; // atom length is 1
   },
 
-  itemInfo(item: InlineType) {
+  itemInfo(item: InlineItem) {
     if ('text' in item) {
       return { isText: true, itemLen: item.text.length };
     } else {
