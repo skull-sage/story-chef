@@ -18,20 +18,24 @@ const observer = new MutationObserver((mutations) => {
    *
   */
   const sel = window.getSelection();
-  console.log("(|) SELECTION VALUE", sel)
+  const range = sel.getRangeAt(0);
+  const newRange = document.createRange();
+  newRange.selectNodeContents(rootRef.value);
+  newRange.setStart(range.startContainer, range.startOffset);
+  newRange.setEnd(range.endContainer, range.endOffset);
+  sel.removeAllRanges();
+  sel.addRange(newRange);
 });
 
 onMounted(() => {
 
-  document.addEventListener('selectionchange', () => {
-    //selection.value = window.getSelection();
-    //console.log("(|) SELECTION VALUE", selection.value)
-  });
 
   console.log("rootRef", rootRef.value);
   observer.observe(rootRef.value, {
     subtree: true,
-    characterData: true
+    characterData: true,
+    characterDataOldValue: true,
+    childList: true
   });
 
 });

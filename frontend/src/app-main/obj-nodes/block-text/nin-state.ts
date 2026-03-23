@@ -7,20 +7,20 @@ export default class NinState {
 
   dataNode: BlockText;
   elm: HTMLElement;
-  selState: ShallowRef<TextSelection>;
+  selection: TextSelection;
   domSelection: Selection;
-  renderKey: number;
   updateView: (node: BlockText) => void;
   emitChange: (node: BlockText) => void;
+  updateSelection: (selection: TextSelection) => void;
 
-  constructor(elm: HTMLElement, updateView: (node: BlockText) => void, emitChange: (node: BlockText) => void) {
+  constructor(elm: HTMLElement, updateView: (node: BlockText) => void, emitChange: (node: BlockText) => void, updateSelection: (selection: TextSelection) => void) {
 
     this.elm = elm;
-    this.selState = shallowRef({ from: 0, to: 0, mark: undefined });
+    this.selection = { from: 0, to: 0, mark: undefined };
     this.domSelection = window.getSelection()!;
     this.updateView = updateView;
     this.emitChange = emitChange;
-    this.renderKey = 0;
+    this.updateSelection = updateSelection;
   }
 
   setDataNode(node: BlockText) {
@@ -37,12 +37,8 @@ export default class NinState {
 
   }
 
-  selection(): TextSelection {
-    return this.selState.value;
-  }
-
   calcDomSelection() {
-    this.selState.value = calcFromDomSelection(this.elm, this.dataNode.content);
+    this.selection = calcFromDomSelection(this.elm, this.dataNode.content);
 
   }
 
@@ -54,12 +50,10 @@ export default class NinState {
 
   $patchContent(content: InlineItem[], adjustFrom: number, adjustTo: number) {
     this.dataNode.content = content;
+    this.updateView(this.dataNode);
     this.domSelection.removeAllRanges();
+    adjustTextLocalSelection(this.elm, content, adjustFrom, adjustTo);
     this.emitChange(this.dataNode);
-    this.renderKey++;
-    nextTick(() => {
-      adjustTextLocalSelection(this.elm, content, adjustFrom, adjustTo);
-    });
   }
 
 
