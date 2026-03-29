@@ -13,6 +13,7 @@ export type BlockRangeSelection = {
 
 export type InlineSelection = {
   inlineIdx: number;
+  domNode: Node;
   offset: number;
   isText: Boolean;
 }
@@ -24,37 +25,8 @@ export type TextSelection = {
   focusXY?: { x: number; y: number } | null;
   start?: InlineSelection;
   end?: InlineSelection;
-}
+  isCollapsed: boolean; // start.inlineIdx == end.inlineIdx && start.offset == end.offset
 
-export class SelectionState {
-  selection: ShallowRef<TextSelection>;
-  domSelection: Selection;
-  elm: HTMLElement;
-
-  constructor(elm: HTMLElement) {
-    this.elm = elm;
-    this.selection = shallowRef({ from: 0, to: 0, mark: undefined });
-    this.domSelection = window.getSelection()!;
-  }
-
-  trackDomSelection(content: InlineItem[]) {
-    //console.log("## tracking dom selection for content: ", content);
-    this.selection.value = calcFromDomSelection(this.elm, content);
-    //console.log("## after tracking: calcFromDomSelection: ", this.selection.value);
-  }
-
-
-
-  adjustDomSelection(content: InlineItem[], from: number, to: number) {
-    // console.log("## adjusting dom selection:", from, to);
-
-    //adjustTextLocalSelection(this.elm, content, from, to);
-
-    this.domSelection.removeAllRanges();
-    nextTick(() => {
-      adjustTextLocalSelection(this.elm, content, from, to)
-    });
-  }
 }
 
 
@@ -65,21 +37,20 @@ export function calcFromDomSelection(elm: HTMLElement, content: InlineItem[]): T
   let { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
 
   let prefixLen = 0;
-  let from = 0, to = 0;
-  let start, end;
+  let from = 0, to = 0, start, end;
   let mark: MarkType = undefined;
-  const domChildren = elm.children;
+  const domChildren = elm.childNodes;
 
   // this loop won't run if node.content is empty
   // html renders each item {InlineText, InlineAtom} wrapped in span tag
   for (let idx = 0; idx < content.length; idx++) {
     if (domChildren[idx].contains(startContainer)) {
-      start = { inlineIdx: idx, offset: startOffset };
+      start = { inlineIdx: idx, domNode: domChildren[idx], offset: startOffset };
       from = prefixLen + startOffset;
 
     }
     if (domChildren[idx].contains(endContainer)) {
-      end = { inlineIdx: idx, offset: endOffset };
+      end = { inlineIdx: idx, domNode: domChildren[idx], offset: endOffset };
       to = prefixLen + endOffset;
       break;
     }
@@ -96,7 +67,7 @@ export function calcFromDomSelection(elm: HTMLElement, content: InlineItem[]): T
       mark = (item as InlineText).mark;
     }
   }
-  return { from, to, mark, start, end, focusXY: calcFocusPos(sel) };
+  return { from, to, mark, start, end, focusXY: calcFocusPos(sel), isCollapsed: sel.isCollapsed };
 
 }
 

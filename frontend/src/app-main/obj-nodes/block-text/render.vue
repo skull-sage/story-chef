@@ -5,18 +5,18 @@
     contenteditable="true"
     @mouseup="onMouseup"
     @keydown="onKeyDown"
-    @keyup="onKeyup"
   ></div>
 </template>
 
 <script lang="ts">
-import { defineComponent, markRaw, render, type PropType, getCurrentInstance } from 'vue';
+import { defineComponent, markRaw, render, type PropType, getCurrentInstance, shallowRef } from 'vue';
 import type { BlockText } from './text-types';
 import { COMMON_MARK } from './text-types';
-import NinState from './nin-state';
+import NinStore from './nin-store';
 import CmdsText from './cmds-basic';
 import { KEY_MAPPING } from './cmd-mapping';
 import { renderContent, renderNode } from './render-block-text';
+import { TextSelection } from 'prosemirror-state';
 
 export default defineComponent({
   name: 'BlockTextRender',
@@ -29,24 +29,25 @@ export default defineComponent({
   emits: ['update:modelValue'],
   data() {
     return {
-      ninState: markRaw(null as NinState | null)
+      ninState: markRaw(null as NinStore | null),
+      selection: shallowRef<TextSelection>(null)
     };
   },
   mounted() {
     const rootEl = this.$refs.rootRef as HTMLElement;
     if (!rootEl) return;
 
-    this.ninState = new NinState(rootEl, (dataNode)=>this.updateView(dataNode), (dataNode)=>this.$emit('update:modelValue', dataNode));
+    this.ninState = new NinStore(rootEl, {
+      updateView: (dataNode) => this.updateView(dataNode),
+      emitChange: (dataNode) => this.$emit('update:modelValue', dataNode),
+      updateSelection: (selection) => this.selection = selection
+    });
     if (this.modelValue) {
       this.ninState.setDataNode(this.modelValue);
     }
   },
   methods: {
-    emitChange(dataNode:BlockText, adjustFrom?:number, adjustTo?:number) {
-      this.updateView(dataNode);
-      this.ninState.adjustDomSelection(dataNode.content, adjustFrom, adjustTo);
-      this.$emit('update:modelValue', dataNode);
-    },
+
     updateView(dataNode: BlockText) {
       const rootEl = this.$refs.rootRef as HTMLElement;
       if (!rootEl) return;
@@ -61,9 +62,7 @@ export default defineComponent({
     onMouseup() {
       this.ninState?.calcDomSelection();
     },
-    onKeyup(e: KeyboardEvent) {
-      this.ninState?.calcDomSelection();
-    },
+
     onKeyDown(e: KeyboardEvent) {
       const keyStr = e.key;
 

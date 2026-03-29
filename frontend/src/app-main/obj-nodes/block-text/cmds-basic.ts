@@ -2,7 +2,7 @@ import { InlineText, InlineAtom, InlineItem, isMarkEqual, MarkType } from "./tex
 import { BlockText } from "./text-types"
 import { SelectionState, TextSelection } from "./text-selection"
 import { nextTick } from "process";
-import NinState from "./nin-state";
+import NinState from "./nin-store";
 
 
 
