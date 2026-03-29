@@ -9,6 +9,7 @@ export default class NinState {
   elm: HTMLElement;
   selection: TextSelection;
   domSelection: Selection;
+
   updateView: (node: BlockText) => void;
   emitChange: (node: BlockText) => void;
   updateSelection: (selection: TextSelection) => void;
@@ -18,6 +19,7 @@ export default class NinState {
     this.elm = elm;
     this.selection = { from: 0, to: 0, mark: undefined };
     this.domSelection = window.getSelection()!;
+    
     this.updateView = updateView;
     this.emitChange = emitChange;
     this.updateSelection = updateSelection;
