@@ -13,7 +13,7 @@ import { defineComponent, markRaw, render, type PropType, getCurrentInstance, sh
 import type { BlockText } from './text-types';
 import { COMMON_MARK } from './text-types';
 import NinStore from './nin-store';
-import CmdsText from './cmds-basic';
+import CmdsText from './cmds-text';
 import { KEY_MAPPING } from './cmd-mapping';
 import { renderContent, renderNode } from './render-block-text';
 import { TextSelection } from 'prosemirror-state';

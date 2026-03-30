@@ -1,4 +1,4 @@
-import cmdsBasic from './cmds-basic';
+import cmdsBasic from './cmds-text';
 import { COMMON_MARK, type MarkType } from './text-types';
 
 /**

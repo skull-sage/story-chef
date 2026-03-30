@@ -1,4 +1,4 @@
-import { $BlockText, BlockText, InlineItem, MarkType, TextAttr } from "./text-types";
+import { $BlockText, BlockText, InlineItem, MarkType, TextNodeAttr } from "./text-types";
 import { adjustTextLocalSelection, calcFromDomSelection, TextSelection } from "./text-selection";
 import { nextTick } from "process";
 import { shallowRef, ShallowRef } from "vue";
@@ -29,9 +29,11 @@ export default class NinStore {
   }
 
 
-  calcDomSelection() {
-    this.selection = calcFromDomSelection(this.elm.firstElementChild as HTMLElement, this.dataNode.content);
-    this.updateSelection(this.selection);
+  calcDomSelection(): TextSelection {
+    const sel = calcFromDomSelection(this.elm.firstElementChild as HTMLElement, this.dataNode.content);
+    this.selection = sel;
+    this.updateSelection(sel);
+    return sel;
   }
 
   adjustDomSelection(content: InlineItem[], adjustFrom: number, adjustTo: number) {
@@ -49,44 +51,13 @@ export default class NinStore {
     });
   }
 
-  // mainly character mutation with caret/collapsed selection
-  $patchMutation(mutations: MutationRecord[]) {
-    const rootBlock = this.elm.firstElementChild;
-    if (!rootBlock) return;
 
-    let isModified = false;
-    for (const mutation of mutations) {
-      if (mutation.type === 'characterData') {
-        const textNode = mutation.target;
-        const inlineElement = textNode.parentElement;
-
-        if (inlineElement) {
-          const index = Array.from(rootBlock.childNodes).indexOf(inlineElement);
-
-          if (index !== -1 && index < this.dataNode.content.length) {
-            const item = this.dataNode.content[index];
-            if ('text' in item) {
-              item.text = textNode.textContent || '';
-              isModified = true;
-            }
-          }
-        }
-      }
+  $patchAttr(attrs: TextNodeAttr) {
+    for (const key in attrs) {
+      this.dataNode.attrs[key] = attrs[key];
     }
-
-    if (isModified) {
-      this.emitChange(this.dataNode);
-    }
+    this.emitChange(this.dataNode);
   }
-
-
-  // $patchAttr(attrs: TextAttr) {
-  //   for (const key in attrs) {
-  //     this.dataNode.attrs[key] = attrs[key];
-  //   }
-  //   this.emitChange(this.dataNode);
-  //   this.renderKey++;
-  // }
 
 
 }

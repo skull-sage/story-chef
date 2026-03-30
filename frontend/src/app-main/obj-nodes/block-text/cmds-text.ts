@@ -1,8 +1,9 @@
-import { InlineText, InlineAtom, InlineItem, isMarkEqual, MarkType } from "./text-types"
+import { InlineText, InlineAtom, InlineItem, isMarkEqual, MarkType, TextNodeAttr } from "./text-types"
 import { BlockText } from "./text-types"
-import { SelectionState, TextSelection } from "./text-selection"
+import { TextSelection } from "./text-selection"
 import { nextTick } from "process";
 import NinState from "./nin-store";
+import NinStore from "./nin-store";
 
 
 
@@ -124,12 +125,11 @@ export class FlatContent {
 // as this function is common to many commands we intend to make
 // updating selction should change the domSelection utilizing Vue Watch Effect
 function replaceText(ninState: NinState, text: string) {
-  const { from, to, mark } = ninState.selection();
+  const { from, to, mark } = ninState.selection;
   const flatContent = FlatContent.expand(ninState.dataNode.content);
   const newContent = flatContent.replaceText(from, to, text, mark);
   const result = from + text.length;
-  ninState.dataNode.content = newContent;
-  ninState.adjustDomSelection(newContent, result, result);
+  ninState.$patchContent(newContent, result, result);
 
   // abc|abcd|
 }
@@ -154,8 +154,8 @@ export default {
     console.warn("makeInsertAtom is not implemented yet");
   },
 
-  makeDeleteLeft: () => (ninState: NinState) => {
-    const { from, to, mark } = ninState.selection();
+  makeDeleteLeft: () => (ninState: NinStore) => {
+    const { from, to, mark } = ninState.selection;
     if (to - from == 0) return; // if there is a selection or cursor is at the start, do nothing
 
     const flatContent = FlatContent.expand(ninState.dataNode.content);
@@ -171,19 +171,15 @@ export default {
   },
 
   makeApplyMark: (mark: MarkType) => (ninState: NinState) => {
-    const { from, to, mark: selMark } = ninState.selection();
+    const { from, to, mark: selMark } = ninState.selection;
     const flatContent = FlatContent.expand(ninState.dataNode.content);
     let toApply = selMark && isMarkEqual(selMark, mark) ? undefined : mark;
     const newContent = flatContent.applyMark(from, to, toApply);
     ninState.$patchContent(newContent, from, to);
   },
 
-  makeApplyAttr: (attr: any) => (ninState: NinState) => {
-    for (const key in attr) {
-      (ninState.dataNode.attrs as any)[key] = attr[key];
-    }
-    ninState.emitChange(ninState.dataNode);
-    ninState.renderKey++;
+  makeApplyAttr: (attr: TextNodeAttr) => (ninState: NinState) => {
+    ninState.$patchAttr(attr);
   }
 
 }
