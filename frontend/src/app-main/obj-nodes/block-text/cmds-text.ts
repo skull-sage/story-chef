@@ -172,6 +172,7 @@ export default {
 
   makeApplyMark: (mark: MarkType) => (ninState: NinState) => {
     const { from, to, mark: selMark } = ninState.selection;
+    if (to - from == 0) return; // if there is a selection or cursor is at the start, do nothing
     const flatContent = FlatContent.expand(ninState.dataNode.content);
     let toApply = selMark && isMarkEqual(selMark, mark) ? undefined : mark;
     const newContent = flatContent.applyMark(from, to, toApply);

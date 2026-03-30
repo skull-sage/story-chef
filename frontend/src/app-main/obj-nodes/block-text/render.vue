@@ -1,22 +1,20 @@
 <template>
-  <div
-    ref="rootRef"
-    class="editable-content"
+  <div ref="rootRef" class="editable-content"
     contenteditable="true"
     @mouseup="onMouseup"
-    @keydown="onKeyDown"
+    @focus="redirectSelection"
+    @click="redirectSelection"
   ></div>
 </template>
 
 <script lang="ts">
 import { defineComponent, markRaw, render, type PropType, getCurrentInstance, shallowRef } from 'vue';
 import type { BlockText } from './text-types';
-import { COMMON_MARK } from './text-types';
 import NinStore from './nin-store';
-import CmdsText from './cmds-text';
-import { KEY_MAPPING } from './cmd-mapping';
-import { renderContent, renderNode } from './render-block-text';
+import { renderNode } from './render-block-text';
 import { TextSelection } from 'prosemirror-state';
+import { KeyBinding } from './binding-keyinput';
+import bindMutation from './binding-mutation';
 
 export default defineComponent({
   name: 'BlockTextRender',
@@ -26,25 +24,35 @@ export default defineComponent({
       required: false
     }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:model-value'],
   data() {
     return {
-      ninState: markRaw(null as NinStore | null),
-      selection: shallowRef<TextSelection>(null)
+      ninStore: undefined,
+      selection: shallowRef<TextSelection>(null),
+      mutationBinding: undefined,
+      keyBinding: undefined,
     };
   },
   mounted() {
     const rootEl = this.$refs.rootRef as HTMLElement;
     if (!rootEl) return;
 
-    this.ninState = new NinStore(rootEl, {
+    const ninStore = new NinStore(rootEl, {
       updateView: (dataNode) => this.updateView(dataNode),
-      emitChange: (dataNode) => this.$emit('update:modelValue', dataNode),
+      emitChange: (dataNode) => this.$emit('update:model-value', dataNode),
       updateSelection: (selection) => this.selection = selection
     });
-    if (this.modelValue) {
-      this.ninState.setDataNode(this.modelValue);
-    }
+    this.ninStore = markRaw(ninStore);
+
+    this.keyBinding = new KeyBinding(ninStore);
+    this.mutationBinding = bindMutation(ninStore);
+
+    this.ninStore.setDataNode(this.modelValue);
+
+  },
+  beforeUnmount() {
+    this.keyBinding.unmount();
+    this.mutationBinding.unmount();
   },
   methods: {
 
@@ -52,45 +60,34 @@ export default defineComponent({
       const rootEl = this.$refs.rootRef as HTMLElement;
       if (!rootEl) return;
 
-      if (!this.ninState) {
+      if (!this.ninStore) {
         return;
       }
       const appContext = this.$.appContext;
       const vnode = renderNode(dataNode, appContext);
       render(vnode, rootEl);
     },
+    redirectSelection() {
+      const rootEl = this.$refs.rootRef as HTMLElement;
+      if (!rootEl) return;
+      const sel = window.getSelection();
+      if (!sel) return;
+
+      if (sel.anchorNode === rootEl || sel.focusNode === rootEl) {
+        let target: Node = rootEl.firstElementChild as Node;
+        if (target) {
+          while (target.firstChild) {
+            target = target.firstChild;
+          }
+          sel.collapse(target, 0);
+        }
+      }
+    },
     onMouseup() {
-      this.ninState?.calcDomSelection();
+      this.redirectSelection();
+      this.ninStore?.calcDomSelection();
     },
 
-    onKeyDown(e: KeyboardEvent) {
-      const keyStr = e.key;
-
-      if (keyStr === 'Backspace') {
-        e.preventDefault();
-         this.ninState.delLeft();
-        return;
-      }
-
-      if (keyStr.length > 1) {
-        return; // pass mod keys Ctrl/Alt/Shift to the dom
-      }
-
-      e.preventDefault();
-      console.log('#Input Key Str:', keyStr, 'length:', keyStr.length, 'code-point:', keyStr.charCodeAt(0));
-
-      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
-        let modKey = '';
-        if (e.ctrlKey || e.metaKey) modKey += 'Ctrl+';
-        if (e.altKey) modKey += 'Alt+';
-        else if (e.shiftKey) modKey += 'Shift+';
-        const fullKey = modKey + keyStr;
-        console.log("[.] FullKey", fullKey);
-        return;
-      }
-
-      this.ninState.replaceText(keyStr);
-    }
   }
 });
 </script>
@@ -106,6 +103,18 @@ export default defineComponent({
   outline: none;
   transition: box-shadow 0.2s;
   white-space: pre-wrap;
+  min-height: auto;
+  position: relative;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0; /* the above doesn't seem to work in Edge */
+}
+
+.editable-content:first-child{
+  min-width: 100%;
 }
 
 .editable-content:focus {

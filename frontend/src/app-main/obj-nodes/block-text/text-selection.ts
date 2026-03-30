@@ -33,6 +33,7 @@ export type TextSelection = {
 export function calcFromDomSelection(elm: HTMLElement, content: InlineItem[]): TextSelection {
   const sel = window.getSelection();
   const validSel = sel && elm.contains(sel.anchorNode) && elm.contains(sel.focusNode);
+
   if (!validSel) return;
   let { startContainer, startOffset, endContainer, endOffset } = sel.getRangeAt(0);
 
@@ -67,6 +68,7 @@ export function calcFromDomSelection(elm: HTMLElement, content: InlineItem[]): T
       mark = (item as InlineText).mark;
     }
   }
+
   return { from, to, mark, start, end, focusXY: calcFocusPos(sel), isCollapsed: sel.isCollapsed };
 
 }

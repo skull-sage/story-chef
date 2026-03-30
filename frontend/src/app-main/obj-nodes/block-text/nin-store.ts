@@ -25,6 +25,7 @@ export default class NinStore {
   setDataNode(node: BlockText) {
     this.dataNode = $BlockText.sanitize(node);
     this.emitChange(this.dataNode);
+    this.updateView(this.dataNode);
 
   }
 

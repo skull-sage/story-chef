@@ -3,8 +3,8 @@
     <div class="row">
       <div class="col-8">
         <div class="text-bold q-mb-md">Interactive Content</div>
-        <!-- <BlockText v-model="textNode" ref="blockTextRef" /> -->
-        <MutationExample />
+        <BlockText v-model="textNode" ref="blockTextRef" />
+        <!-- <MutationExample /> -->
         <!-- <VNodeRender /> -->
       </div>
     </div>
@@ -18,7 +18,7 @@ import { basicSample as sampleBlockText } from "./data-samples/block-text";
 import MutationExample from "./mutation-example.vue";
 import VNodeRender from "./vnode-render.vue";
 
-const textNode = undefined; // shallowRef(sampleBlockText);
+const textNode = undefined; // markRaw(sampleBlockText);
 
 
 </script>

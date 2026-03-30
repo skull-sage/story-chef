@@ -19,7 +19,7 @@ const levelTag = {
 
 const renderText = (item: InlineText) => {
   if (!item.mark)
-    return h('span', item.text);
+    return item.text;
 
   let tag;
   if (item.mark.type == 'format') {
