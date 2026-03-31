@@ -39,6 +39,11 @@ const renderText = (item: InlineText) => {
 }
 
 export function renderContent(content: InlineItem[]) {
+
+  if (content.length == 0) {
+    return h('br');
+  }
+
   return content.map((item) => {
     if ('text' in item) {
       return renderText(item as InlineText);

@@ -23,16 +23,24 @@ export class KeyBinding {
     const sel: TextSelection = this.ninStore.calcDomSelection();
     const hasModifier = e.ctrlKey || e.altKey || e.metaKey;
 
+
+
+    if (keyStr == 'Backspace') {
+      if (this.ninStore.nodeContentEmpty()) {
+        e.preventDefault();
+        return;
+      }else if (!sel.isCollapsed) {
+        e.preventDefault();
+        CmdsText.makeDeleteLeft()(this.ninStore);
+        return;
+      }
+      return;
+    }
+
     // won't handle any hot/action keys other than backspace
     if (keyStr.length > 1 && keyStr !== 'Backspace') return;
     // won't handle any key input for empty selection
     if (!hasModifier && sel.isCollapsed) return;
-
-    if (keyStr == 'Backspace') {
-      e.preventDefault();
-      CmdsText.makeDeleteLeft()(this.ninStore);
-      return;
-    }
 
     // Modifier + key combo  (Ctrl+A, Ctrl+Shift+Z, etc.)
     if (hasModifier) {

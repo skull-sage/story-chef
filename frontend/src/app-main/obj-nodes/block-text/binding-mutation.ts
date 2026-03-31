@@ -6,11 +6,9 @@ import { BlockText, COMMON_MARK } from './text-types';
 import { KEY_MAPPING } from './cmd-mapping';
 
 
-const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta']);
-const IGNORED_SOLO_KEYS = new Set([...MODIFIER_KEYS, 'Backspace']);
 
 
-function _handleMutation(mutations: MutationRecord[], ninStore: NinStore) {
+function _handleCharMutation(mutations: MutationRecord[], ninStore: NinStore) {
   let { elm, dataNode, emitChange } = ninStore;
   const rootBlock = elm.firstElementChild;
   if (!rootBlock) return;
@@ -31,6 +29,12 @@ function _handleMutation(mutations: MutationRecord[], ninStore: NinStore) {
 }
 
 function mapMutationTargetToInlineItem(target: Node, dataNode: BlockText, rootNode: HTMLElement): boolean {
+
+  if (target.nodeType == Node.TEXT_NODE && dataNode.content.length == 0) {
+    dataNode.content.push({ text: target.textContent, mark: undefined });
+    return true;
+  }
+
   let targetIdx = undefined;
   for (let idx = 0; idx < rootNode.childNodes.length; idx++) {
     if (rootNode.childNodes[idx].contains(target)) {
@@ -39,14 +43,20 @@ function mapMutationTargetToInlineItem(target: Node, dataNode: BlockText, rootNo
     }
   }
 
-  if (targetIdx) {
-    const item = dataNode.content[targetIdx];
-    if ('text' in item) {
-      item.text = target.textContent || '';
-      return true;
-    }
+  if (targetIdx === undefined)
+    throw new Error("InlineItem is not aligned with Mutation target: " + target.nodeName + ":" + target.textContent);
+
+  const item = dataNode.content[targetIdx];
+  if ('text' in item == false)
+    throw new Error(`Mutation target mismatch: InlineItem:${targetIdx} is not a text node`);
+  if (target.textContent == '') {
+    //delete item at targetIdx
+    dataNode.content.splice(targetIdx, 1);
+    return true;
+  } else {
+    item.text = target.textContent;
   }
-  return false;
+  return true;
 
 
 }
@@ -64,9 +74,9 @@ function _resetDomSelection(targetElm: HTMLElement) {
   sel.addRange(newRange);
 }
 
-export default function bindMutation(ninStore: NinStore) {
+export default function bindCharMutation(ninStore: NinStore) {
   const mutationObserver = new MutationObserver((mutations) => {
-    _handleMutation(mutations, ninStore);
+    _handleCharMutation(mutations, ninStore);
     _resetDomSelection(ninStore.elm.firstElementChild as HTMLElement);
   });
 

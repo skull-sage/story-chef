@@ -15,6 +15,7 @@ import { renderNode } from './render-block-text';
 import { TextSelection } from 'prosemirror-state';
 import { KeyBinding } from './binding-keyinput';
 import bindMutation from './binding-mutation';
+import bindCharMutation from './binding-mutation';
 
 export default defineComponent({
   name: 'BlockTextRender',
@@ -45,7 +46,7 @@ export default defineComponent({
     this.ninStore = markRaw(ninStore);
 
     this.keyBinding = new KeyBinding(ninStore);
-    this.mutationBinding = bindMutation(ninStore);
+    this.mutationBinding = bindCharMutation(ninStore);
 
     this.ninStore.setDataNode(this.modelValue);
 

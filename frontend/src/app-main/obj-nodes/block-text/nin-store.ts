@@ -41,6 +41,9 @@ export default class NinStore {
     adjustTextLocalSelection(this.elm.firstElementChild as HTMLElement, content, adjustFrom, adjustTo);
   }
 
+  nodeContentEmpty() {
+    return this.dataNode.content.length === 0;
+  }
 
   $patchContent(content: InlineItem[], adjustFrom: number, adjustTo: number) {
     nextTick(() => {

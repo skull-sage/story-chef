@@ -72,16 +72,14 @@ export const $BlockText = {
 
     if (node == undefined) {
       let attrs = { level: 'paragraph', align: 'left', color: '#000000' };
-      let content = [{ text: '', mark: undefined }];
+      let content = [ ];
       return { attrs, content }
     }
 
     const clone: BlockText = { ...node, attrs: { ...node.attrs } };
     const newContent: InlineItem[] = [];
 
-    if (node.content.length === 0) {
-      newContent.push({ text: '', mark: undefined });
-    } else {
+    if (node.content.length > 0) {
       for (let idx = 0; idx < node.content.length; idx++) {
         let item: InlineItem = node.content[idx];
         if ('text' in item || 'name' in item) {
