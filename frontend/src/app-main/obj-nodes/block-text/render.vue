@@ -4,6 +4,7 @@
     @mouseup="onMouseup"
     @focus="redirectSelection"
     @click="redirectSelection"
+    @keydown="handleKeyDown"
   ></div>
 </template>
 
@@ -13,9 +14,8 @@ import type { BlockText } from './text-types';
 import NinStore from './nin-store';
 import { renderNode } from './render-block-text';
 import { TextSelection } from 'prosemirror-state';
-import { KeyBinding } from './binding-keyinput';
-import bindMutation from './binding-mutation';
-import bindCharMutation from './binding-mutation';
+import { KEY_MAPPING } from "./cmd-mapping";
+import CmdsText from "./cmds-text";
 
 export default defineComponent({
   name: 'BlockTextRender',
@@ -30,44 +30,58 @@ export default defineComponent({
     return {
       ninStore: undefined,
       selection: shallowRef<TextSelection>(null),
-      mutationBinding: undefined,
-      keyBinding: undefined,
     };
   },
   mounted() {
     const rootEl = this.$refs.rootRef as HTMLElement;
     if (!rootEl) return;
-
-    const ninStore = new NinStore(rootEl, {
-      updateView: (dataNode) => this.updateView(dataNode),
+    const appContext = this.$.appContext;
+    const ninStore = new NinStore(rootEl, appContext, {
       emitChange: (dataNode) => this.$emit('update:model-value', dataNode),
       updateSelection: (selection) => this.selection = selection
     });
     this.ninStore = markRaw(ninStore);
-
-    this.keyBinding = new KeyBinding(ninStore);
-    this.mutationBinding = bindCharMutation(ninStore);
-
     this.ninStore.setDataNode(this.modelValue);
 
   },
-  beforeUnmount() {
-    this.keyBinding.unmount();
-    this.mutationBinding.unmount();
-  },
   methods: {
 
-    updateView(dataNode: BlockText) {
-      const rootEl = this.$refs.rootRef as HTMLElement;
-      if (!rootEl) return;
+    handleKeyDown(e: KeyboardEvent) {
+      console.log("# KEY EVENT: ", e);
+      const keyStr = e.key;
+      const hasModifier = e.ctrlKey || e.altKey || e.metaKey;
 
-      if (!this.ninStore) {
+      if (keyStr == 'Backspace') {
+        e.preventDefault();
+        CmdsText.makeDeleteLeft()(this.ninStore);
         return;
       }
-      const appContext = this.$.appContext;
-      const vnode = renderNode(dataNode, appContext);
-      render(vnode, rootEl);
-    },
+
+      // won't handle any hot/action keys other than backspace
+      if (keyStr.length > 1) return;
+
+      // Modifier + key combo  (Ctrl+A, Ctrl+Shift+Z, etc.)
+      if (hasModifier) {
+        let keyCombos = keyStr;
+        if (e.ctrlKey) keyCombos = 'Ctrl+' + keyStr;
+        if (e.altKey) keyCombos = 'Alt+' + keyStr;
+        if (e.shiftKey) keyCombos = 'Shift+' + keyStr;
+        if (e.metaKey) keyCombos = 'Meta+' + keyStr;
+
+        const cmd = KEY_MAPPING[keyCombos];
+        if (cmd) {
+          e.preventDefault();
+          cmd(this.ninStore);
+        }
+        return;
+      }
+
+      CmdsText.makeReplaceText(keyStr)(this.ninStore);
+      e.preventDefault();
+      console.log("# KEY INPUT: ", keyStr);
+
+  },
+
     redirectSelection() {
       const rootEl = this.$refs.rootRef as HTMLElement;
       if (!rootEl) return;
