@@ -129,8 +129,10 @@ export function adjustTextLocalSelection(elm: HTMLElement, content: InlineItem[]
     if (from >= prefixLen && from <= prefixLen + itemLen) {
       start = { inlineIdx: idx, offset: from - prefixLen, isText };
     }
-    if (to >= prefixLen && to <= prefixLen + itemLen) {
-      end = { inlineIdx: idx, offset: to - prefixLen, isText };
+    if (prefixLen + itemLen >= to) {
+      const endOffset = to - prefixLen;
+      end = { inlineIdx: idx, offset: endOffset, isText };
+      break;
     }
     prefixLen += itemLen;
   }

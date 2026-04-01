@@ -78,7 +78,6 @@ export default class NinStore {
 
   $patchContent(content: InlineItem[], adjustFrom: number, adjustTo: number) {
     queueMicrotask(() => {
-
       this.dataNode.content = content;
       renderNode(this.dataNode, this.rootElm, this.appContext);
       window.getSelection().removeAllRanges();
