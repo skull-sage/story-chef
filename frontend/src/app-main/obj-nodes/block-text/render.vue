@@ -47,7 +47,7 @@ export default defineComponent({
   methods: {
 
     handleKeyDown(e: KeyboardEvent) {
-      console.log("# KEY EVENT: ", e);
+      this.ninStore.calcDomSelection();
       const keyStr = e.key;
       const hasModifier = e.ctrlKey || e.altKey || e.metaKey;
 

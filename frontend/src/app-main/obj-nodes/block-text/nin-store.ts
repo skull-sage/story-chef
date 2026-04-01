@@ -47,50 +47,39 @@ export default class NinStore {
   }
 
 
-  $replaceTextAtSelection(text: string) {
-    const { from, to, mark, start, end } = this.selection;
-    const content = this.dataNode.content;
-    // selection start and end is within same InlineText
-    if (content.length == 0 && text) {
-      content.push({
-        text: text,
-        mark: mark
-      });
-      this.$patchContent(content, 0, text.length);
-      return;
-    }
+  $patchInline(inlineIdx: number, startOffset: number, endOffset: number, text: string, adjustPos: number) {
+    const item = this.dataNode.content[inlineIdx] as InlineText;
 
 
+    const newText = item.text.slice(0, startOffset) + text + item.text.slice(endOffset);
+    const containerElm = this.rootElm.firstChild as HTMLElement;
+    const itemElm = containerElm.childNodes[inlineIdx];
 
-    const adjPos = from + text.length;
-    if (start.inlineIdx == end.inlineIdx && 'text' in content[start.inlineIdx]) {
-      const item = content[start.inlineIdx] as InlineText;
-      const newText = item.text.slice(0, start.offset) + text + item.text.slice(end.offset);
-      content[start.inlineIdx] = { text: newText, mark: mark };
-      const containerElm = this.rootElm.firstChild as HTMLElement;
-      const itemElm = containerElm.childNodes[start.inlineIdx];
-      queueMicrotask(() => {
-        this.emitChange(this.dataNode);
-        if (newText) itemElm.textContent = newText;
-        else itemElm.remove();
-        window.getSelection().removeAllRanges();
-        adjustTextLocalSelection(containerElm, content, adjPos, adjPos);
-      });
-      return;
-    }
-
-    // selection expands to multiple inline items
-    const flatContent = FlatContent.expand(content);
-    const newContent = flatContent.replaceText(from, to, text, mark);
-    this.$patchContent(newContent, adjPos, adjPos);
+    queueMicrotask(() => {
+      if (newText) {
+        this.dataNode.content[inlineIdx] = { text: newText, mark: item.mark };
+        itemElm.textContent = newText;
+      } else {
+        this.dataNode.content.splice(inlineIdx, 1);
+        if (this.dataNode.content.length == 0) {
+          renderNode(this.dataNode, this.rootElm, this.appContext);
+        } else {
+          itemElm.remove();
+        }
+      }
+      this.emitChange(this.dataNode);
+      window.getSelection().removeAllRanges();
+      adjustTextLocalSelection(containerElm, this.dataNode.content, adjustPos, adjustPos);
+      //debugger;
+    });
   }
 
 
 
   $patchContent(content: InlineItem[], adjustFrom: number, adjustTo: number) {
-
-    this.dataNode.content = content;
     queueMicrotask(() => {
+
+      this.dataNode.content = content;
       renderNode(this.dataNode, this.rootElm, this.appContext);
       window.getSelection().removeAllRanges();
       adjustTextLocalSelection(this.rootElm.firstElementChild as HTMLElement, content, adjustFrom, adjustTo);

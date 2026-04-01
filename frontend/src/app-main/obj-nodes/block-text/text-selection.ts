@@ -100,15 +100,15 @@ export function setDomSelection(elm: HTMLElement, start: InlineSelection, end: I
     range.setEnd(elm, 0);
   } else {
 
-    const startChild = elm.children[start.inlineIdx];
-    const endChild = elm.children[end.inlineIdx];
+    const startChild = elm.childNodes[start.inlineIdx];
+    const endChild = elm.childNodes[end.inlineIdx];
 
-    if (start.isText) {
+    if (startChild instanceof HTMLElement) {
       range.setStart(startChild.firstChild, start.offset);
     } else {
       range.setStart(startChild, start.offset);
     }
-    if (end.isText) {
+    if (endChild instanceof HTMLElement) {
       range.setEnd(endChild.firstChild, end.offset);
     } else {
       range.setEnd(endChild, end.offset);

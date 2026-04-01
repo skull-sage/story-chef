@@ -6,41 +6,67 @@ import NinStore from "./nin-store";
 import { FlatContent } from "./flat-content";
 
 
+function replaceText(ninStore: NinStore, text: string) {
+  const { from, to, mark, start, end } = ninStore.selection;
 
+
+  const adjPos = from + text.length; // for empty content from == 0
+
+  // selection start and end is within same InlineText
+  if (ninStore.dataNode.content.length == 0) {
+    const content = [{ text: text, mark: mark }];
+    ninStore.$patchContent(content, adjPos, adjPos);
+    return;
+  }
+
+
+  // selection is within a single InlineText
+  if (start.inlineIdx == end.inlineIdx && 'text' in ninStore.dataNode.content[start.inlineIdx]) {
+    ninStore.$patchInline(start.inlineIdx, start.offset, end.offset, text, adjPos);
+    return;
+  }
+
+  // selection expands to multiple inline items
+  const flatContent = FlatContent.expand(ninStore.dataNode.content);
+  const newContent = flatContent.replaceText(from, to, text, mark);
+  ninStore.$patchContent(newContent, adjPos, adjPos);
+}
 
 
 export default {
   // make prefix means we are creating functions that return
   // command (node, selection) => {mutation logic here}
 
-  makeReplaceText: (text: string) => (ninState: NinStore) => {
-    ninState.$replaceTextAtSelection(text);
+  makeReplaceText: (text: string) => (ninStore: NinStore) => {
+    replaceText(ninStore, text);
   },
 
-  makeClipboardPaste: () => (ninState: NinStore) => {
+  makeClipboardPaste: () => (ninStore: NinStore) => {
     navigator.clipboard.readText().then((raw) => {
       if (!raw) return;
-      ninState.$replaceTextAtSelection(raw);
+      replaceText(ninStore, raw);
     });
   },
 
-  makeInsertAtom: (atom: InlineAtom) => (ninState: NinStore) => {
+  makeInsertAtom: (atom: InlineAtom) => (ninStore: NinStore) => {
     console.warn("makeInsertAtom is not implemented yet");
   },
 
-  makeDeleteLeft: () => (ninState: NinStore) => {
-    const { from, to, mark } = ninState.selection;
-    if (to - from == 0) return; // if there is a selection or cursor is at the start, do nothing
+  makeDeleteLeft: () => (ninStore: NinStore) => {
+    const { from, to, start, end } = ninStore.selection;
+    if (from == 0 && to == 0) return; // this also solves content == []
 
-    const flatContent = FlatContent.expand(ninState.dataNode.content);
-    const newContent = flatContent.replaceText(from, to, '', mark);
-    ninState.$patchContent(newContent, from, from);
+    const adjPos = (from == to) ? from - 1 : from;
+    // selection is within a single InlineText
+    if (start.inlineIdx == end.inlineIdx && 'text' in ninStore.dataNode.content[start.inlineIdx]) {
+      let startOffset = start.offset == end.offset ? start.offset - 1 : start.offset;
+      ninStore.$patchInline(start.inlineIdx, startOffset, end.offset, '', adjPos);
+      return;
+    }
 
-    /*
-    delete with Caret selection  are left for handling mutation observer:
-       ninState.dataNode.content = flatContent.replaceText(from - 1, to, '', mark);
-      ninState.adjustDomSelection(ninState.dataNode.content, from - 1, from - 1);
-    */
+    const flatContent = FlatContent.expand(ninStore.dataNode.content);
+    const newContent = flatContent.replaceText(from, to, '', undefined);
+    ninStore.$patchContent(newContent, adjPos, adjPos);
 
   },
 
