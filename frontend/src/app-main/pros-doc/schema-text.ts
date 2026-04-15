@@ -5,34 +5,16 @@ export const nodeSpec: Record<string, NodeSpec> = {
   doc: {
     content: "block+",
   },
-  inline_text: {
+  text: {
     group: "inline",
-  },
-  title: {
-    content: "inline*",
-    attrs: {
-      level: { default: "title_section" } //  h1, h2, h3, regular
-    },
-    parseDOM: [
-      { tag: 'h1', getAttrs: () => ({ level: 'title' }) },
-      { tag: 'h2', getAttrs: () => ({ level: 'title_section' }) },
-      { tag: 'h3', getAttrs: () => ({ level: 'title_subsection' }) },
-    ],
-    toDOM(node) {
-      let { level } = node.attrs
-      let tag = 'h2'
-      if (level === 'title') tag = 'h1'
-      if (level === 'title_subsection') tag = 'h3'
-      return [tag, 0]
-    },
   },
   block_text: {
     content: "inline*",
     attrs: {
-      level: { default: "regular" } //  h1, h2, h3, regular
+      level: { default: "paragraph" } //  h1, h2, h3, regular
     },
     parseDOM: [
-      { tag: "p", getAttrs: () => ({ level: 'regular' }) },
+      { tag: "p", getAttrs: () => ({ level: 'paragraph' }) },
       { tag: 'h1', getAttrs: () => ({ level: 'title' }) },
       { tag: 'h2', getAttrs: () => ({ level: 'title_section' }) },
       { tag: 'h3', getAttrs: () => ({ level: 'title_subsection' }) },
@@ -46,10 +28,12 @@ export const nodeSpec: Record<string, NodeSpec> = {
       return [tag, 0]
     },
   },
+
+
 }
 
 
-export const markSchema: Record<string, MarkSpec> = {
+export const markSpec: Record<string, MarkSpec> = {
   bold: {
     parseDOM: [
       { tag: "strong" },
